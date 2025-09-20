@@ -131,6 +131,9 @@ int g_flag;
 int g_push;
 int g_x;
 int g_y;
+int g_color = RGB(0, 0, 0);
+int g_colorface = RGB(255, 255, 255);
+int g_brush = 1;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -159,6 +162,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         HDC hdc = GetDC(hWnd);
 
+        HPEN myPen;
+        HBRUSH myBrush;
+
+        myPen = CreatePen(PS_SOLID, g_brush, g_color);
+        SelectObject(hdc, myPen);
+
+        myBrush = CreateSolidBrush(g_colorface);
+        SelectObject(hdc, myBrush);
+        
         /// 그리기 모양
         if (g_flag == 0)
         {
@@ -181,6 +193,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_x = x;
         g_y = y;
 
+        DeleteObject(myPen);
+        DeleteObject(myBrush);
+
         ReleaseDC(hWnd, hdc);
     }
         break;
@@ -193,11 +208,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             HDC hdc = GetDC(hWnd);
 
+            HPEN myPen;
+
+            myPen = CreatePen(PS_SOLID, g_brush, g_color);
+            SelectObject(hdc, myPen);
+
             MoveToEx(hdc, g_x, g_y, NULL);
             LineTo(hdc, x, y);
 
             g_x = x;
             g_y = y;
+
+            DeleteObject(myPen);
 
             ReleaseDC(hWnd, hdc);
             
@@ -206,9 +228,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-            
-            /// 선 색상 변경
-            HPEN myPen, osPen;
             
             // 메뉴 선택을 구문 분석합니다:
             switch (wmId)
@@ -232,40 +251,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
             /// 색상 선택
             case ID_RED:
-                g_flag = 11;
+                g_color = RGB(255, 0, 0);
                 break;
 
             case ID_BLUE:
-                g_flag = 12;
+                g_color = RGB(0, 0, 255);
             break;
 
             case ID_GREEN:
-                g_flag = 13;
+                g_color = RGB(0, 255, 0);
                 break;
 
             case ID_BLACK:
-                g_flag = 14;
+                g_color = RGB(0, 0, 0);
+                break;
+
+            case ID_BLACKFACE:
+                g_colorface = RGB(0, 0, 0);
                 break;
 
             case ID_WHITE:
-                g_flag = 15;
+                g_colorface = RGB(255, 255, 255);
                 break;
 
             case ID_CRIMSON:
-                g_flag = 16;
+                g_colorface = RGB(200, 100, 100);
                 break;
 
             /// 굵기 선택
             case ID_1PX:
-                g_flag = 21;
+                g_brush = 1;
                 break;
 
             case ID_5PX:
-                g_flag = 22;
+                g_brush = 5;
                 break;
 
             case ID_10PX:
-                g_flag = 23;
+                g_brush = 10;
                 break;
 
             /// 지우기 버튼
