@@ -135,14 +135,21 @@ int stageColor[] = { RGB(181, 181, 255), RGB(209, 188, 245), RGB(240, 168, 169) 
 /// 배경색의 전체 화면 : FillRect( ) API
 
 /// 메뉴 정의
-enum GAME_STATE {
+enum gameState {
     MENU,
     PLAYING,
     LOADING,
     SETTING
 };
 
-GAME_STATE currentStage = MENU; /// 게임 시작 시 초기 상태를 메뉴로 설정한다.
+gameState currentStage = MENU; /// 게임 시작 시 초기 상태를 메뉴로 설정한다.
+
+/// 메뉴 항목 구조체
+struct menuItems {
+    const wchar_t* text;
+    RECT rect;
+};
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -212,6 +219,78 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 /// GradientFill 함수 호출
                 /// GRADIENT_FILL_RECT_V - 채우기 모기
                 GradientFill(hdc, vertex, 2 /*사용할 정점*/, &gRect, 1 /*채울 영역*/, GRADIENT_FILL_RECT_V);
+
+
+
+
+
+                /// 제목
+                HFONT tittleFont, tittleOldFont;
+                tittleFont = CreateFont(
+                    30,                        // 글꼴 높이
+                    0,                         // 글꼴 너비
+                    0,                         // 문자 기울기 각도
+                    0,                         // 기본 문자 기울기 각도
+                    FW_BOLD,                  // 글꼴 굵기
+                    FALSE,                     // 이탤릭체 여부
+                    FALSE,                     // 밑줄 여부
+                    FALSE,                     // 취소선 여부
+                    DEFAULT_CHARSET,          // 문자 집합
+                    OUT_DEFAULT_PRECIS,       // 출력 정밀도
+                    CLIP_DEFAULT_PRECIS,      // 클리핑 정밀도
+                    DEFAULT_QUALITY,          // 출력 품질
+                    DEFAULT_PITCH | FF_SWISS, // 글꼴 피치 및 패밀리
+                    L"Arial"                   // 글꼴 이름
+                );
+
+                tittleOldFont = (HFONT)SelectObject(hdc, tittleFont);
+
+                /// 텍스트 색상 설정 
+                SetTextColor(hdc, RGB(0, 0, 0));
+                /// 투명 설정
+                SetBkMode(hdc, TRANSPARENT);
+
+                wchar_t TittleA[60] = { L"THE WORLD'S" };
+                TextOut(hdc, 30, 30, TittleA, lstrlenW(TittleA));
+
+                wchar_t TittleB[60] = { L"VERISON 1.5" };
+                TextOut(hdc, 800, 150, TittleB, lstrlenW(TittleB));
+
+                SelectObject(hdc, tittleOldFont);
+				DeleteObject(tittleFont);
+
+
+
+
+
+                /// 메뉴 항목
+				HFONT menuFont, menuOldFont;   
+
+				SelectObject(hdc, tittleFont);
+                menuFont = CreateFont(
+                    23,
+                    0,
+                    0,
+                    0,
+                    FW_BOLD,
+                    FALSE,
+                    FALSE,
+                    FALSE,
+                    DEFAULT_CHARSET,
+                    OUT_DEFAULT_PRECIS,
+                    CLIP_DEFAULT_PRECIS,
+                    DEFAULT_QUALITY,
+                    DEFAULT_PITCH | FF_SWISS,
+                    L"Arial"
+                );
+				menuOldFont = (HFONT)SelectObject(hdc, menuFont);
+
+                wchar_t menuTittle[60] = {};
+
+                SetTextColor(hdc, RGB(127, 127, 127));
+                SetBkMode(hdc, TRANSPARENT);
+
+
 
             }
             else if (currentStage == PLAYING)
