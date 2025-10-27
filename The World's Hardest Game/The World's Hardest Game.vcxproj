@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{5d200987-7807-4fbc-a34a-5deb4427a8e0}</ProjectGuid>
+    <ProjectGuid>{9cd0376f-8953-44b9-bdb6-08a695271302}</ProjectGuid>
     <RootNamespace>TheWorldsHardestGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
