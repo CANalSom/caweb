@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c43c8b79-dba6-4f40-8f3e-54a68d0fb45f}</ProjectGuid>
-    <RootNamespace>자유선그리기</RootNamespace>
+    <ProjectGuid>{5d200987-7807-4fbc-a34a-5deb4427a8e0}</ProjectGuid>
+    <RootNamespace>TheWorldsHardestGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -126,18 +126,17 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="자유선그리기.h" />
+    <ClInclude Include="The World%27s Hardest Game.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FileName.cpp" />
-    <ClCompile Include="자유선그리기.cpp" />
+    <ClCompile Include="The World%27s Hardest Game.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="자유선그리기.rc" />
+    <ResourceCompile Include="The World%27s Hardest Game.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico" />
-    <Image Include="자유선그리기.ico" />
+    <Image Include="The World%27s Hardest Game.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

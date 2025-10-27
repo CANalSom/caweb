@@ -24,20 +24,17 @@
     <ClInclude Include="Resource.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="자유선그리기.h">
+    <ClInclude Include="The World%27s Hardest Game.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="자유선그리기.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="FileName.cpp">
+    <ClCompile Include="The World%27s Hardest Game.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="자유선그리기.rc">
+    <ResourceCompile Include="The World%27s Hardest Game.rc">
       <Filter>리소스 파일</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -45,7 +42,7 @@
     <Image Include="small.ico">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="자유선그리기.ico">
+    <Image Include="The World%27s Hardest Game.ico">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>
