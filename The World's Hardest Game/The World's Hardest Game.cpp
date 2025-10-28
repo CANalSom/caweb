@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "The World's Hardest Game.h"
 #pragma comment(lib, "msimg32.lib")
+#include "Windows.h"
 
 #define MAX_LOADSTRING 100
 
@@ -123,6 +124,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 //
 
+
 /// 메뉴 항목 ID 정의
 #define ITEM_START_GAME          1
 #define ITEM_LOAD_GAME           2
@@ -220,6 +222,36 @@ void ScreenFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 };
 
+/// 글꼴 버튼 누르기 전용 사용
+void MenuFont(HDC hdc, HWND hWnd);
+
+void MenuFont(HDC hdc, HWND hWnd)
+{
+    /// 메뉴 항목
+    HFONT menuFont, menuOldFont;
+
+    menuFont = CreateFont(
+        35,
+        0,
+        0,
+        0,
+        FW_BOLD,
+        FALSE,
+        FALSE,
+        FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_SWISS,
+        L"Arial"
+    );
+    menuOldFont = (HFONT)SelectObject(hdc, menuFont);
+
+    SetTextColor(hdc, RGB(81, 83, 95));
+    SetBkMode(hdc, TRANSPARENT);
+}
+
 /// 메뉴 정의
 enum GameState {
     MENU,
@@ -245,9 +277,9 @@ struct MenuItem {
 
 MenuItem menuList[] = {
     { L"START GAME", ITEM_START_GAME, { 100, 300, 300, 350 } } ,
-    { L"LOAD GAME", ITEM_LOAD_GAME, { 100, 350, 280, 400 } },
-    { L"SETTING", ITEM_SETTING, { 100, 400, 235, 450 } },
-    { L"EXIT", ITEM_EXIT, { 100, 450, 170, 500 } }
+    { L"LOAD GAME", ITEM_LOAD_GAME, { 100, 370, 280, 420 } },
+    { L"SETTING", ITEM_SETTING, { 100, 440, 235, 490 } },
+    { L"EXIT", ITEM_EXIT, { 100, 510, 170, 560 } }
 };
 
 int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
@@ -286,8 +318,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             ScreenFont(hdc, hWnd);
 
-            wchar_t tutorialIntroText[] = { L"Welcome to the World's Hardest Game!" };
-
             for (int i = 0; i <= menuItem_count; i++)
             {
                 // PtInRect 함수 : 특정 좌표가 사각형 영역 내에 있는지 확인
@@ -303,8 +333,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     case ITEM_START_GAME:
                         /// 상태 전환 : 메뉴 -> TUTORIAL_INTRO
                         currentStage = TUTORIAL_INTRO;
-                        DrawBackGroundGradient(hdc, hWnd);
-                        TextOut(hdc, 350, 250, tutorialIntroText, lstrlenW(tutorialIntroText));
+                        InvalidateRect(hWnd, NULL, TRUE);
                         break;
                     case ITEM_LOAD_GAME:
                         currentStage = LOADING;
@@ -354,79 +383,57 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DrawBackGroundGradient(hdc, hWnd);
 
             /// 제목
-            HFONT tittleFont, tittleOldFont;
-            tittleFont = CreateFont(
-                36,                        // 글꼴 높이
-                0,                         // 글꼴 너비
-                0,                         // 문자 기울기 각도
-                0,                         // 기본 문자 기울기 각도
-                FW_BOLD,                  // 글꼴 굵기
-                FALSE,                     // 이탤릭체 여부
-                FALSE,                     // 밑줄 여부
-                FALSE,                     // 취소선 여부
-                DEFAULT_CHARSET,          // 문자 집합
-                OUT_DEFAULT_PRECIS,       // 출력 정밀도
-                CLIP_DEFAULT_PRECIS,      // 클리핑 정밀도
-                DEFAULT_QUALITY,          // 출력 품질
-                DEFAULT_PITCH | FF_SWISS, // 글꼴 피치 및 패밀리
-                L"Arial"                   // 글꼴 이름
-            );
+            ScreenFont(hdc, hWnd);
 
-            tittleOldFont = (HFONT)SelectObject(hdc, tittleFont);
+            WCHAR TittleA[60] = { L"THE WORLD'S" };
+            TextOut(hdc, 40, 30, TittleA, lstrlenW(TittleA));
 
-            /// 텍스트 색상 설정 
-            SetTextColor(hdc, RGB(0, 0, 0));
-            /// 투명 설정
-            SetBkMode(hdc, TRANSPARENT);
-
-            wchar_t TittleA[60] = { L"THE WORLD'S" };
-            TextOut(hdc, 30, 30, TittleA, lstrlenW(TittleA));
-
-            wchar_t TittleB[60] = { L"VERISON 1.5" };
-            TextOut(hdc, 800, 150, TittleB, lstrlenW(TittleB));
-
-            SelectObject(hdc, tittleOldFont);
-            DeleteObject(tittleFont);
+            WCHAR TittleB[60] = { L"VERISON 1.5" };
+            TextOut(hdc, 800, 170, TittleB, lstrlenW(TittleB));
 
 
             /// 메뉴 항목
-            HFONT menuFont, menuOldFont;
+            MenuFont(hdc, hWnd);
 
-            SelectObject(hdc, tittleFont);
-            menuFont = CreateFont(
-                35,
-                0,
-                0,
-                0,
-                FW_BOLD,
-                FALSE,
-                FALSE,
-                FALSE,
-                DEFAULT_CHARSET,
-                OUT_DEFAULT_PRECIS,
-                CLIP_DEFAULT_PRECIS,
-                DEFAULT_QUALITY,
-                DEFAULT_PITCH | FF_SWISS,
-                L"Arial"
-            );
-            menuOldFont = (HFONT)SelectObject(hdc, menuFont);
-
-            wchar_t menuTittle[60] = {};
-
-            SetTextColor(hdc, RGB(81, 83, 95));
-            SetBkMode(hdc, TRANSPARENT);
+            WCHAR menuTittle[60] = {};
 
             for (int i = 0; i <= menuItem_count; i++)
             {
                 TextOut(hdc, menuList[i].rect.left, menuList[i].rect.top, menuList[i].text, lstrlenW(menuList[i].text));
             }
+        }
+        else if (currentStage == TUTORIAL_INTRO)
+        {
+            DrawBackGroundGradient(hdc, hWnd);
+            ScreenFont(hdc, hWnd);
 
-            SelectObject(hdc, menuOldFont);
-            DeleteObject(menuFont);
+            WCHAR tutorialIntroText[] = { L"Welcome to the World's Hardest Game!" };
+
+            TextOut(hdc, 220, 200, tutorialIntroText, lstrlenW(tutorialIntroText));
+            MenuFont(hdc, hWnd);
+
+            WCHAR clickBack[] = { L"BACK" };
+            WCHAR clickContinue[] = { L"CONTINUE" };
+            WCHAR clickSpace[] = { L"(SPACE BAR)" };
+            
+            TextOut(hdc, 350, 400, clickBack, lstrlenW(clickBack));
+            TextOut(hdc, 650, 400, clickContinue, lstrlenW(clickContinue));
+        }
+        else if (currentStage == TUTORIAL_BEGIN)
+        {
+
+        }
+        else if (currentStage == TUTORIAL_GAME)
+        {
+
+        }
+        else if (currentStage == TUTORIAL_END)
+        {
+
         }
         else if (currentStage == PLAYING)
         {
-            DrawBackGroundGradient(hdc, hWnd);
+
         }
         else if (currentStage == LOADING)
         {
