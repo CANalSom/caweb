@@ -131,9 +131,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #define ITEM_SETTING             3
 #define ITEM_EXIT                4
 
-/// 타이머 ID 및 지연 시간 정의
-#define TUTORIAL_TIMER_ID        100
-#define TUTORIAL_DISPLAY_TIME    2000  // 2초
+/// 취소 및 계속
+#define ITEM_FIRSTSCREENT        5
+#define ITEM_PLAY                6
 
 /// 색상 코드
 /// 배경 색 LEVEL 1 ~ 20 : 181, 181, 255 ( 연한 파란색 ) / 적 : 4, 4, 242
@@ -260,29 +260,32 @@ enum GameState {
     SETTING,
 
     /// 상태 화면 만들기
-    TUTORIAL_INTRO,
-    TUTORIAL_BEGIN,
-    TUTORIAL_GAME,
-    TUTORIAL_END
+    TUTORIAL_INTRO
 };
 
 GameState currentStage = MENU; /// 게임 시작 시 초기 상태를 메뉴로 설정한다.
 
 /// 메뉴 항목 구조체
-struct MenuItem {
+typedef struct {
     const wchar_t* text;
     int id;
     RECT rect;
-};
+} ButtonClick;
 
-MenuItem menuList[] = {
+ButtonClick menuList[] = {
     { L"START GAME", ITEM_START_GAME, { 100, 300, 300, 350 } } ,
     { L"LOAD GAME", ITEM_LOAD_GAME, { 100, 370, 280, 420 } },
     { L"SETTING", ITEM_SETTING, { 100, 440, 235, 490 } },
     { L"EXIT", ITEM_EXIT, { 100, 510, 170, 560 } }
 };
 
+ButtonClick clickItem[] = {
+    L"BACK", ITEM_FIRSTSCREENT, { 350, 400, 450, 450 },
+    L"CONTINUE", ITEM_PLAY, { 650, 400, 800, 450 }
+};
+
 int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
+int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -309,14 +312,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_LBUTTONDOWN:
     {
+        int mouseX = LOWORD(lParam);
+        int mouseY = HIWORD(lParam);
+        HDC hdc = GetDC(hWnd);
+        ScreenFont(hdc, hWnd);
+
         if (currentStage == MENU)
         {
-            HDC hdc = GetDC(hWnd);
-
-            int mouseX = LOWORD(lParam);
-            int mouseY = HIWORD(lParam);
-
-            ScreenFont(hdc, hWnd);
 
             for (int i = 0; i <= menuItem_count; i++)
             {
@@ -349,24 +351,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                     break;
                 }
-                else if (currentStage == TUTORIAL_INTRO)
+            }
+        }
+        else if (currentStage == TUTORIAL_INTRO)
+        {
+            for (int i = 0; i <= clickItem_count; i++)
+            {
+                if (PtInRect(&clickItem[i].rect, { mouseX, mouseY }))
                 {
-
-                    // 상태 전환 : TUTORIAL_INTRO -> TUTORIAL_GAME (CONTINUE 클릭)
-                    // CONTINUE 버튼 클릭 시
-                    if (mouseX > 550 && mouseX < 750 && mouseY > 500 && mouseY < 550)
+                    switch (clickItem[i].id)
                     {
-                        currentStage = TUTORIAL_GAME;
-
-                        /// 타이머 설정 : TUTORIAL_TIMER_ID, TUTORIAL_DISPLAY_TIME
-                        /// 2초 후에 타이머 이벤트 발생
-                        SetTimer(hWnd, TUTORIAL_DISPLAY_TIME, TUTORIAL_DISPLAY_TIME, NULL);
-
+                    case ITEM_FIRSTSCREENT:
+                        currentStage = MENU;
                         InvalidateRect(hWnd, NULL, TRUE);
+                        break;
+                    case ITEM_PLAY:
+                        currentStage = PLAYING;
+                        InvalidateRect(hWnd, NULL, TRUE);
+                        break;
                     }
+                    break;
                 }
             }
-
             ReleaseDC(hWnd, hdc);
         };
     }
@@ -395,9 +401,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             /// 메뉴 항목
             MenuFont(hdc, hWnd);
 
-            WCHAR menuTittle[60] = {};
-
-            for (int i = 0; i <= menuItem_count; i++)
+            for (int i = 0; i < menuItem_count; i++)
             {
                 TextOut(hdc, menuList[i].rect.left, menuList[i].rect.top, menuList[i].text, lstrlenW(menuList[i].text));
             }
@@ -412,24 +416,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             TextOut(hdc, 220, 200, tutorialIntroText, lstrlenW(tutorialIntroText));
             MenuFont(hdc, hWnd);
 
-            WCHAR clickBack[] = { L"BACK" };
-            WCHAR clickContinue[] = { L"CONTINUE" };
-            WCHAR clickSpace[] = { L"(SPACE BAR)" };
-            
-            TextOut(hdc, 350, 400, clickBack, lstrlenW(clickBack));
-            TextOut(hdc, 650, 400, clickContinue, lstrlenW(clickContinue));
-        }
-        else if (currentStage == TUTORIAL_BEGIN)
-        {
-
-        }
-        else if (currentStage == TUTORIAL_GAME)
-        {
-
-        }
-        else if (currentStage == TUTORIAL_END)
-        {
-
+            for (int i = 0; i <= clickItem_count; i++)
+            {
+                TextOut(hdc, clickItem[i].rect.left, clickItem[i].rect.top, clickItem[i].text, lstrlenW(clickItem[i].text));
+			}
         }
         else if (currentStage == PLAYING)
         {
