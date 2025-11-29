@@ -99,8 +99,45 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
-    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    /// 창 고정하기
+    const int ClientWidth = 1200;
+	const int ClientHeight = 650;
+
+
+    /// 창 스타일에 WS_THICKFRAME(크기 조절 가능)과 WS_MAXIMIZEBOX(최대화 버튼)를 제외
+    /// WS_CAPTION(제목) | WS_SYSMENU(시스템 메뉴) | WS_MINIMIZEBOX(최소화 버튼) | WS_BORDER(테두리)
+    DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER;
+
+	RECT windowRect = { 0, 0, ClientWidth, ClientHeight };
+
+    /// 클라이언트 영역 크기에 맞춰 창의 전체 크기 계산.
+    /// (제목 표시줄과 테두리 두께가 포함된 최종 창 크기)
+	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+    int FinalWidth = windowRect.right - windowRect.left;
+	int FinalHeight = windowRect.bottom - windowRect.top;
+
+    /// 화면 중앙에 생성
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    int startX = (screenWidth - FinalWidth) / 2;
+    int startY = (screenHeight - FinalHeight) / 2;
+
+
+    HWND hWnd = CreateWindowW(
+        szWindowClass, 
+        szTitle, 
+        dwStyle,
+        startX,
+        startY,
+        FinalWidth,
+        FinalHeight,
+        nullptr, 
+        nullptr, 
+        hInstance, 
+        nullptr
+    );
 
     if (!hWnd)
     {
@@ -135,14 +172,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #define ITEM_FIRSTSCREENT        5
 #define ITEM_PLAY                6
 
-/// 색상 코드
-/// 배경 색 LEVEL 1 ~ 20 : 181, 181, 255 ( 연한 파란색 ) / 적 : 4, 4, 242
-/// 배경 색 LEVEL 21 ~ 30 : 209, 188, 245 ( 연한 보라색 ) / 적 : 79, 66, 110
-/// 배경 색 LEVEL 31 ~ 40 : 240, 168, 169 ( 연한 빨간색 )  / 적 : 248, 254, 79
-/// 부활 지점, 시작 지점, 도착 지점 : 182, 254, 180 ( 연한 초록색 )
-/// 코인 : 255, 233, 0 ( 노란색 )
-
-int stageColor[] = { RGB(181, 181, 255), RGB(209, 188, 245), RGB(240, 168, 169) };
 
 /// 배경색의 전체 화면 : FillRect( ) API
 
@@ -222,6 +251,32 @@ void ScreenFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 };
 
+void HardestGameFont(HDC hdc, HWND hwnd);
+
+void HardestGameFont(HDC hdc, HWND hwnd)
+{
+    HFONT HGFont, OldHGFont;
+
+    HGFont = CreateFont(
+        120, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+        DEFAULT_PITCH | FF_SWISS, L"Arial Black"
+    );
+
+    OldHGFont = (HFONT)SelectObject(hdc, HGFont);
+    SetBkMode(hdc, TRANSPARENT);
+
+ 
+    SetTextColor(hdc, RGB(0, 0, 0)); 
+    TextOut(hdc, 45, 60, L"HARDEST GAME", lstrlenW(L"HARDEST GAME")); 
+
+    SetTextColor(hdc, RGB(58, 109, 184)); 
+    TextOut(hdc, 40, 55, L"HARDEST GAME", lstrlenW(L"HARDEST GAME"));
+
+    SelectObject(hdc, HGFont);
+    DeleteObject(OldHGFont);
+}
+
 /// 글꼴 버튼 누르기 전용 사용
 void MenuFont(HDC hdc, HWND hWnd);
 
@@ -287,6 +342,9 @@ ButtonClick clickItem[] = {
 int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
 int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
 
+
+/// 게임 스테이지 선언
+int g_currentLevel = 1;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -394,8 +452,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             WCHAR TittleA[60] = { L"THE WORLD'S" };
             TextOut(hdc, 40, 30, TittleA, lstrlenW(TittleA));
 
-            WCHAR TittleB[60] = { L"VERISON 1.5" };
+            WCHAR TittleB[60] = { L"VERISON 0.5" };
             TextOut(hdc, 800, 170, TittleB, lstrlenW(TittleB));
+
+			HardestGameFont(hdc, hWnd);
 
 
             /// 메뉴 항목
@@ -423,7 +483,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else if (currentStage == PLAYING)
         {
+            HBRUSH PlayingBrush = NULL;
 
+            if (g_currentLevel >= 1 && g_currentLevel < 10)
+            {
+                PlayingBrush = CreateSolidBrush(RGB(181, 181, 255));
+
+				FillRect(hdc, &ps.rcPaint, PlayingBrush);
+            }
+            else if (g_currentLevel >= 10 && g_currentLevel < 15)
+            {
+                PlayingBrush = CreateSolidBrush(RGB(214, 188, 249));
+
+                FillRect(hdc, &ps.rcPaint, PlayingBrush);
+            }
+            else if (g_currentLevel >= 15)
+            {
+                PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
+
+                FillRect(hdc, &ps.rcPaint, PlayingBrush);
+            }
         }
         else if (currentStage == LOADING)
         {
