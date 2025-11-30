@@ -220,16 +220,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DeleteObject(myPen);
 
             ReleaseDC(hWnd, hdc);
-
-
-
-            HWND 간단한그림판통신기 = FindWindow(NULL, L"간단한그림판통신기");
-            if (간단한그림판통신기 == NULL)
-            {
-                MessageBox(hWnd, L"못 찾았음", L"간단한그림판통신기", MB_OK);
-            }
-            PostMessage(간단한그림판통신기, WM_DRAW_SYNC, g_x/*wParam*/, (g_y & 0xFFFF) | (x << 16)/*lParam*/);
         
+            HWND 간단한그림판통신기 = FindWindow(NULL, L"간단한그림판통신기");
+            PostMessage(간단한그림판통신기, WM_DRAW_SYNC, wParam, lParam);
+
             g_x = x;
             g_y = y;
         }
