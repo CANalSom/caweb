@@ -1,8 +1,9 @@
-﻿// 간단한그림판통신기.cpp : 애플리케이션에 대한 진입점을 정의합니다.
+﻿// 통신기.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
+#include "resource.h"
 #include "framework.h"
-#include "간단한그림판통신기.h"
+#include "통신기.h"
 
 #define MAX_LOADSTRING 100
 
@@ -121,12 +122,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
 //
-#define WM_DRAW_SYNC    (WM_USER + 1)
 
-int g_flag;
-int g_push;
-int g_x;
-int g_y;
+#define WM_IPC_DRAW_BEGIN        (WM_USER + 100)
+#define WM_IPC_DRAW_MOVE         (WM_USER + 101)
+#define WM_IPC_DRAW_END          (WM_USER + 102)
+#define WM_IPC_SET_PROPERTY      (WM_USER + 103)
+
+#define PROP_FLAG                1
+#define PROP_COLOR               2
+#define PROP_COLOR_FACE          3
+#define PROP_BRUSH_SIZE          4
+#define PROP_CLEAR_ALL           5
+
+int g_flag = 0;
+int g_push = FALSE; 
+int g_x = 0;
+int g_y = 0;
 int g_color = RGB(0, 0, 0);
 int g_colorface = RGB(255, 255, 255);
 int g_brush = 1;
@@ -135,99 +146,95 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    case WM_DRAW_SYNC:
+    case WM_IPC_DRAW_BEGIN:
+    {
+        g_flag = (int)wParam;
+
+        g_x = LOWORD(lParam);
+        g_y = HIWORD(lParam);
+    }
+    break;
+    case WM_IPC_DRAW_MOVE:
     {
         int x = LOWORD(lParam);
         int y = HIWORD(lParam);
 
         HDC hdc = GetDC(hWnd);
 
+        HPEN myPen = CreatePen(PS_SOLID, g_brush, g_color);
+
+        SelectObject(hdc, myPen);
+
         MoveToEx(hdc, g_x, g_y, NULL);
         LineTo(hdc, x, y);
 
-        ReleaseDC(hWnd, hdc);
-    }
-    case WM_LBUTTONDOWN:
-    {
-        g_push = TRUE;
+        DeleteObject(myPen);
 
-        g_x = LOWORD(lParam);
-        g_y = HIWORD(lParam);
+        ReleaseDC(hWnd, hdc);
+
+        g_x = x;
+        g_y = y;
     }
     break;
-    case WM_LBUTTONUP:
+    case WM_IPC_DRAW_END:
     {
-        g_push = FALSE;
-
-        int x, y;
-        x = LOWORD(lParam);
-        y = HIWORD(lParam);
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
 
         HDC hdc = GetDC(hWnd);
 
-        HPEN myPen;
-        HBRUSH myBrush;
+        HPEN myPen = CreatePen(PS_SOLID, g_brush, g_color);
 
-        myPen = CreatePen(PS_SOLID, g_brush, g_color);
         SelectObject(hdc, myPen);
 
-        myBrush = CreateSolidBrush(g_colorface);
+        HBRUSH myBrush = CreateSolidBrush(g_colorface);
+
         SelectObject(hdc, myBrush);
 
-        /// 그리기 모양
-        if (g_flag == 0)
-        {
-            break;
-        }
-        if (g_flag == 1)   /// 선형
+        if (g_flag == 1)
         {
             MoveToEx(hdc, g_x, g_y, NULL);
             LineTo(hdc, x, y);
         }
-        else if (g_flag == 2)   /// 사각형
+        else if (g_flag == 2)
         {
             Rectangle(hdc, g_x, g_y, x, y);
         }
-        else if (g_flag == 3)   /// 타원형
+        else if (g_flag == 3)
         {
             Ellipse(hdc, g_x, g_y, x, y);
         }
 
-        g_x = x;
-        g_y = y;
-
         DeleteObject(myPen);
         DeleteObject(myBrush);
-
         ReleaseDC(hWnd, hdc);
     }
     break;
-    case WM_MOUSEMOVE:
+    case WM_IPC_SET_PROPERTY:
     {
-        if ((g_push == TRUE) && (g_flag == 4))
+        int prop_type = (int)wParam;
+        LPARAM prop_value = lParam;
+
+        switch (prop_type)
         {
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
-
-            HDC hdc = GetDC(hWnd);
-
-            HPEN myPen;
-
-            myPen = CreatePen(PS_SOLID, g_brush, g_color);
-            SelectObject(hdc, myPen);
-
-            MoveToEx(hdc, g_x, g_y, NULL);
-            LineTo(hdc, x, y);
-
-            g_x = x;
-            g_y = y;
-
-            DeleteObject(myPen);
-
-            ReleaseDC(hWnd, hdc);
-
+        case PROP_FLAG:
+            g_flag = (int)prop_value;
+            break;
+        case PROP_COLOR:
+            g_color = (int)prop_value;
+            break;
+        case PROP_COLOR_FACE:
+            g_colorface = (int)prop_value;
+            break;
+        case PROP_BRUSH_SIZE:
+            g_brush = (int)prop_value;
+            break;
+        case PROP_CLEAR_ALL:
+            InvalidateRect(hWnd, NULL, TRUE);
+            break;
         }
     }
+    break;
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
@@ -239,70 +246,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case ID_LINE:
             g_flag = 1;
             break;
-
         case ID_RECTANGLE_LINE:
             g_flag = 2;
             break;
-
         case ID_ELLIPSE_LINE:
             g_flag = 3;
             break;
-
         case ID_FREE_LINE:
             g_flag = 4;
             break;
-
             /// 색상 선택
         case ID_RED:
             g_color = RGB(255, 0, 0);
             break;
-
         case ID_BLUE:
             g_color = RGB(0, 0, 255);
             break;
-
         case ID_GREEN:
             g_color = RGB(0, 255, 0);
             break;
-
         case ID_BLACK:
             g_color = RGB(0, 0, 0);
             break;
-
         case ID_BLACKFACE:
             g_colorface = RGB(0, 0, 0);
             break;
-
         case ID_WHITE:
             g_colorface = RGB(255, 255, 255);
             break;
-
         case ID_CRIMSON:
             g_colorface = RGB(200, 100, 100);
             break;
-
             /// 굵기 선택
         case ID_1PX:
             g_brush = 1;
             break;
-
         case ID_5PX:
             g_brush = 5;
             break;
-
         case ID_10PX:
             g_brush = 10;
             break;
-
             /// 기타
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
-
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
-
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
@@ -311,9 +302,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
+
         HDC hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+
         EndPaint(hWnd, &ps);
+
     }
     break;
     case WM_DESTROY:
