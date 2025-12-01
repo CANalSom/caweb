@@ -346,6 +346,24 @@ int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
 /// 게임 스테이지 선언
 int g_currentLevel = 1;
 
+/// 맵
+#define MAP_WIDTH   800
+#define MAP_HEIGHT  400
+#define TILE_SIZE   40
+
+/// 검은선 두께
+#define BORDER 3
+
+void Level1(HDC hdc)
+{
+
+}
+
+void Level2(HDC hdc)
+{
+
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -367,7 +385,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     }
     break;
-
     case WM_LBUTTONDOWN:
     {
         int mouseX = LOWORD(lParam);
@@ -377,7 +394,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (currentStage == MENU)
         {
-
             for (int i = 0; i <= menuItem_count; i++)
             {
                 // PtInRect 함수 : 특정 좌표가 사각형 영역 내에 있는지 확인
@@ -435,7 +451,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         };
     }
     break;
-
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -502,6 +517,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
+            }
+
+            if (g_currentLevel == 1)
+            {
+                Level1(hdc);
             }
         }
         else if (currentStage == LOADING)
