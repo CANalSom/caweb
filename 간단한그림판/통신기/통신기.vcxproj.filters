@@ -24,17 +24,17 @@
     <ClInclude Include="Resource.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="간단한그림판통신기.h">
+    <ClInclude Include="통신기.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="간단한그림판통신기.cpp">
+    <ClCompile Include="통신기.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="간단한그림판통신기.rc">
+    <ResourceCompile Include="통신기.rc">
       <Filter>리소스 파일</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -42,7 +42,7 @@
     <Image Include="small.ico">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="간단한그림판통신기.ico">
+    <Image Include="통신기.ico">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>

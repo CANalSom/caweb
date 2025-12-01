@@ -122,7 +122,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 //
 
-#define WM_DRAW_SYNC    (WM_USER + 1)
+#define WM_IPC_DRAW_BEGIN        (WM_USER + 100)
+#define WM_IPC_DRAW_MOVE         (WM_USER + 101)
+#define WM_IPC_DRAW_END          (WM_USER + 102)
+#define WM_IPC_SET_PROPERTY      (WM_USER + 103)
+
+#define PROP_FLAG                1
+#define PROP_COLOR               2
+#define PROP_COLOR_FACE          3
+#define PROP_BRUSH_SIZE          4
+#define PROP_CLEAR_ALL           5
+
+HWND g_ipc = NULL;
 
 HWND g_button;
 
@@ -138,6 +149,8 @@ int g_brush = 1;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    g_ipc = FindWindow(NULL, L"통신기");
+
     switch (message)
     {
     case WM_CREATE:
@@ -151,6 +164,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         g_x = LOWORD(lParam);
         g_y = HIWORD(lParam);
+
+        if (g_ipc)
+        {
+            PostMessage(g_ipc, WM_IPC_DRAW_BEGIN, (WPARAM)g_flag, lParam);
+        }
     }
     break;
     case WM_LBUTTONUP:
@@ -198,6 +216,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         DeleteObject(myBrush);
 
         ReleaseDC(hWnd, hdc);
+
+        if (g_ipc)
+        {
+            PostMessage(g_ipc, WM_IPC_DRAW_END, (WPARAM)g_flag, lParam);
+        }
+
     }
     break;
     case WM_MOUSEMOVE:
@@ -220,9 +244,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DeleteObject(myPen);
 
             ReleaseDC(hWnd, hdc);
-        
-            HWND 간단한그림판통신기 = FindWindow(NULL, L"간단한그림판통신기");
-            PostMessage(간단한그림판통신기, WM_DRAW_SYNC, wParam, lParam);
+
+            if (g_ipc)
+            {
+                PostMessage(g_ipc, WM_IPC_DRAW_MOVE, (WPARAM)g_flag, lParam);
+            }
 
             g_x = x;
             g_y = y;
@@ -231,6 +257,47 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
+
+        if (g_ipc)
+        {
+            switch (wmId)
+            {
+            case ID_LINE:
+            case ID_RECTANGLE_LINE:
+            case ID_ELLIPSE_LINE:
+            case ID_FREE_LINE:
+                g_flag = (wmId == ID_LINE) ? 1 : (wmId == ID_RECTANGLE_LINE) ? 2 : (wmId == ID_ELLIPSE_LINE) ? 3 : 4;
+                // wParam: PROP_FLAG, lParam: g_flag 값
+                PostMessage(g_ipc, WM_IPC_SET_PROPERTY, PROP_FLAG, (LPARAM)g_flag);
+                break;
+            case ID_RED: g_color = RGB(255, 0, 0); goto SendColor;
+            case ID_BLUE: g_color = RGB(0, 0, 255); goto SendColor;
+            case ID_GREEN: g_color = RGB(0, 255, 0); goto SendColor;
+            case ID_BLACK: g_color = RGB(0, 0, 0); goto SendColor;
+            SendColor:
+                PostMessage(g_ipc, WM_IPC_SET_PROPERTY, PROP_COLOR, (LPARAM)g_color);
+                break;
+            case ID_BLACKFACE: g_colorface = RGB(0, 0, 0); goto SendColorFace;
+            case ID_WHITE: g_colorface = RGB(255, 255, 255); goto SendColorFace;
+            case ID_CRIMSON: g_colorface = RGB(200, 100, 100); goto SendColorFace;
+            SendColorFace:
+                PostMessage(g_ipc, WM_IPC_SET_PROPERTY, PROP_COLOR_FACE, (LPARAM)g_colorface);
+                break;
+            case ID_1PX: g_brush = 1; goto SendBrush;
+            case ID_5PX: g_brush = 5; goto SendBrush;
+            case ID_10PX: g_brush = 10; goto SendBrush;
+            SendBrush:
+                PostMessage(g_ipc, WM_IPC_SET_PROPERTY, PROP_BRUSH_SIZE, (LPARAM)g_brush);
+                break;
+            case IDM_CLICK_BUTTON:
+                InvalidateRect(hWnd, NULL, TRUE);
+                MessageBox(hWnd, L"지웠습니다.", L"지우기", NULL);
+                PostMessage(g_ipc, WM_IPC_SET_PROPERTY, PROP_CLEAR_ALL, (LPARAM)NULL);
+                break;
+            default:
+                return DefWindowProc(hWnd, message, wParam, lParam);
+            }
+        }
 
         // 메뉴 선택을 구문 분석합니다:
         switch (wmId)
