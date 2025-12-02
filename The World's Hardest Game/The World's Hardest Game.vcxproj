@@ -135,6 +135,7 @@
     <ResourceCompile Include="The World%27s Hardest Game.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Level1.bmp" />
     <Image Include="small.ico" />
     <Image Include="The World%27s Hardest Game.ico" />
   </ItemGroup>

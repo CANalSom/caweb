@@ -356,7 +356,7 @@ int g_currentLevel = 1;
 
 void Level1(HDC hdc)
 {
-
+    BitBlt(hdc,
 }
 
 void Level2(HDC hdc)
@@ -500,23 +500,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             HBRUSH PlayingBrush = NULL;
 
-            if (g_currentLevel >= 1 && g_currentLevel < 10)
+            if (g_currentLevel >= 1 && g_currentLevel < 5)
             {
                 PlayingBrush = CreateSolidBrush(RGB(181, 181, 255));
 
 				FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (g_currentLevel >= 10 && g_currentLevel < 15)
+            else if (g_currentLevel >= 5 && g_currentLevel < 9)
             {
                 PlayingBrush = CreateSolidBrush(RGB(214, 188, 249));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (g_currentLevel >= 15)
+            else if (g_currentLevel >= 9 && g_currentLevel <= 10)
             {
                 PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
+            }
+            else if (g_currentLevel == 11)
+            {
+                /// 클리어 화면
             }
 
             if (g_currentLevel == 1)
