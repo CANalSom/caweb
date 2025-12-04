@@ -95,6 +95,19 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        이 함수를 통해 인스턴스 핸들을 전역 변수에 저장하고
 //        주 프로그램 창을 만든 다음 표시합니다.
 //
+
+
+
+
+/// 맵
+#define MAP_WIDTH  700
+#define MAP_HEIGHT 300
+RECT g_mapRect = { 250, 150, 1000, 525 };
+
+HBITMAP mapLv1 = NULL;
+HDC memDCMap1 = NULL;
+
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
@@ -143,6 +156,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
+    
+    mapLv1 = (HBITMAP)LoadImageW(hInstance, L"image\\Level1.bmp", IMAGE_BITMAP, MAP_WIDTH, MAP_HEIGHT, LR_LOADFROMFILE);
+    if (mapLv1 == NULL)
+    {
+        // 로드가 실패하면 이 메시지 박스가 떠야 합니다.
+        MessageBox(hWnd, L"이미지 로드 실패! 경로를 확인하세요.", L"ERROR", MB_OK | MB_ICONERROR);
+        return FALSE; // 로드 실패 시 프로그램 종료
+    }
+	HDC hdc = GetDC(hWnd);
+	memDCMap1 = CreateCompatibleDC(hdc);
+	SelectObject(memDCMap1, mapLv1);
+	ReleaseDC(hWnd, hdc);
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
@@ -222,8 +247,6 @@ void DrawBackGroundGradient(HDC hdc, HWND hWnd)
 }
 
 /// 내용 글꼴 사용 함수
-void ScreenFont(HDC hdc, HWND hWnd);
-
 void ScreenFont(HDC hdc, HWND hWnd)
 {
     HFONT Font, OldFont;
@@ -251,8 +274,6 @@ void ScreenFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 };
 
-void HardestGameFont(HDC hdc, HWND hwnd);
-
 void HardestGameFont(HDC hdc, HWND hwnd)
 {
     HFONT HGFont, OldHGFont;
@@ -278,8 +299,6 @@ void HardestGameFont(HDC hdc, HWND hwnd)
 }
 
 /// 글꼴 버튼 누르기 전용 사용
-void MenuFont(HDC hdc, HWND hWnd);
-
 void MenuFont(HDC hdc, HWND hWnd)
 {
     /// 메뉴 항목
@@ -346,17 +365,15 @@ int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
 /// 게임 스테이지 선언
 int g_currentLevel = 1;
 
-/// 맵
-#define MAP_WIDTH   800
-#define MAP_HEIGHT  400
-#define TILE_SIZE   40
-
-/// 검은선 두께
-#define BORDER 3
-
 void Level1(HDC hdc)
 {
-    BitBlt(hdc,
+    int mapX = g_mapRect.left;
+    int mapY = g_mapRect.top;
+
+    if (memDCMap1)
+    {
+        BitBlt(hdc, mapX, mapY, MAP_WIDTH, MAP_HEIGHT, memDCMap1, 0, 0, SRCCOPY);
+    }
 }
 
 void Level2(HDC hdc)
@@ -541,6 +558,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     break;
     case WM_DESTROY:
+        if (memDCMap1)
+        {
+            DeleteDC(memDCMap1);
+        }
+        if (mapLv1)
+        {
+			DeleteObject(mapLv1);
+        }
         PostQuitMessage(0);
         break;
     default:
