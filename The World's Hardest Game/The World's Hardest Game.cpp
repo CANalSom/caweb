@@ -5,6 +5,7 @@
 #include "The World's Hardest Game.h"
 #pragma comment(lib, "msimg32.lib")
 #include "Windows.h"
+#include "time.h"
 
 #define MAX_LOADSTRING 100
 
@@ -381,10 +382,102 @@ void Level2(HDC hdc)
 
 }
 
+/// 플레이어
+int playerX = 100;
+int playerY = 100;
+const int playerSpeed = 5;
+
+bool bKeyDown[256] = { false };
+
+void PlayerPosition()
+{
+    int dx = 0;
+    int dy = 0;
+
+    if (bKeyDown[VK_LEFT])
+    {
+        dx -= playerSpeed;
+	} else if(bKeyDown[VK_RIGHT])
+    {
+        dx += playerSpeed;
+    }
+    if (bKeyDown[VK_UP])
+    {
+        dy -= playerSpeed;
+    }
+    else if (bKeyDown[VK_DOWN])
+    {
+        dy += playerSpeed;
+    }
+
+    if (dx != 0 && dy != 0)
+    {
+        int diagonalSpeed = (int)(playerSpeed * 0.707);
+        if (dx < 0) dx = -diagonalSpeed;
+		if (dx > 0) dx = diagonalSpeed;
+		if (dy < 0) dy = -diagonalSpeed;
+		if (dy > 0) dy = diagonalSpeed;
+
+        playerX += dx;
+        playerY += dy;
+    }
+}
+
+const int playerTotalSize = 37;
+const int playerBorderThickness = 5;
+const int playerInnerSize = playerTotalSize - (playerBorderThickness * 2);
+
+void drawPlayer(HDC hdc)
+{
+    int left = playerX - playerTotalSize / 2;
+	int top = playerY - playerTotalSize / 2;
+	int right = playerX + playerTotalSize / 2;
+	int bottom = playerY + playerTotalSize / 2;
+
+    HPEN BlackPen, BlackOldPen;
+    BlackPen = CreatePen(PS_SOLID, playerBorderThickness, RGB(0, 0, 0));
+	BlackOldPen = (HPEN)SelectObject(hdc, BlackPen);
+    
+    HBRUSH RedBrush;
+	RedBrush = CreateSolidBrush(RGB(255, 0, 0));
+    
+    HBRUSH BlackBrush, BlackOldBrush;
+	BlackBrush = CreateSolidBrush(RGB(0, 0, 0));
+	BlackOldBrush = (HBRUSH)SelectObject(hdc, BlackBrush);
+
+    Rectangle(hdc, left, top, right, bottom);
+
+    SelectObject(hdc, GetStockObject(NULL_PEN));
+	SelectObject(hdc, RedBrush);
+
+    Rectangle(hdc, 
+        left + playerBorderThickness, 
+        top + playerBorderThickness,
+		right - playerBorderThickness, 
+        bottom - playerBorderThickness
+    );
+
+	SelectObject(hdc, BlackOldPen);
+    SelectObject(hdc, BlackOldBrush);
+    DeleteObject(BlackPen);
+    DeleteObject(BlackBrush);
+	DeleteObject(RedBrush);
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_KEYDOWN:
+    {
+        bKeyDown[wParam] = true;
+    }
+    break;
+    case WM_KEYUP:
+    {
+        bKeyDown[wParam] = false;
+    }
+    break;
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
@@ -468,6 +561,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         };
     }
     break;
+    case WM_CREATE:
+    {
+        SetTimer(hWnd, 1, 1000 / 60, NULL);
+    }
+    break;
+    case WM_TIMER:
+    {
+        PlayerPosition();
+        InvalidateRect(hWnd, NULL, TRUE);
+    }
+    break;
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -543,6 +647,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (g_currentLevel == 1)
             {
                 Level1(hdc);
+                drawPlayer(hdc);
             }
         }
         else if (currentStage == LOADING)
