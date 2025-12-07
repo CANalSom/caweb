@@ -98,16 +98,31 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 
 
-
-
 /// 맵
 #define MAP_WIDTH  700
 #define MAP_HEIGHT 300
-RECT g_mapRect = { 250, 150, 1000, 525 };
+RECT mapRect = { 250, 150, 1000, 600 };
 
-HBITMAP mapLv1 = NULL;
-HDC memDCMap1 = NULL;
+const struct { int w, h; } LevelSizes[] = {
+    { 0, 0 },
+    { 700, 300 }, // Level 1 (기본)
+    { 700, 350 }, // Level 2 
+    { 900, 340 },  // Level 3
+    { 300, 100 },  // Level 4
+    { 700, 300 },  // Level 5
+    { 700, 450 },  // Level 6
+    { 700, 300 },  // Level 7
+    { 700, 500 },  // Level 8
+    { 700, 300 },  // Level 9
+    { 700, 600 },  // Level 10
+	{ 700, 300 }   // Level 11 (최종)
+};
 
+#define MAX_LEVELS 11
+HBITMAP mapBitmaps[MAX_LEVELS + 1] = { 0, };
+HDC memDCs[MAX_LEVELS + 1] = { 0, };
+
+int currentLevel = 1;
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -157,18 +172,31 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
+
+    HDC hdc = GetDC(hWnd);
+    WCHAR szFileName[64];
+    for (int i = 1; i <= MAX_LEVELS; i++) {
+        wsprintf(szFileName, L"image\\Level%d.bmp", i);
+
+		int mapW = LevelSizes[i].w;
+		int mapH = LevelSizes[i].h;
+
+        mapBitmaps[i] = (HBITMAP)LoadImageW(
+            hInstance, 
+            szFileName, 
+            IMAGE_BITMAP, 
+            mapW,
+            mapH,
+            LR_LOADFROMFILE
+        );
     
-    mapLv1 = (HBITMAP)LoadImageW(hInstance, L"image\\Level1.bmp", IMAGE_BITMAP, MAP_WIDTH, MAP_HEIGHT, LR_LOADFROMFILE);
-    if (mapLv1 == NULL)
-    {
-        // 로드가 실패하면 이 메시지 박스가 떠야 합니다.
-        MessageBox(hWnd, L"이미지 로드 실패! 경로를 확인하세요.", L"ERROR", MB_OK | MB_ICONERROR);
-        return FALSE; // 로드 실패 시 프로그램 종료
+        if (mapBitmaps[i] != NULL) {
+            memDCs[i] = CreateCompatibleDC(hdc);
+			SelectObject(memDCs[i], mapBitmaps[i]);
+        }
     }
-	HDC hdc = GetDC(hWnd);
-	memDCMap1 = CreateCompatibleDC(hdc);
-	SelectObject(memDCMap1, mapLv1);
-	ReleaseDC(hWnd, hdc);
+
+    ReleaseDC(hWnd, hdc);
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
@@ -202,7 +230,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 /// 배경색의 전체 화면 : FillRect( ) API
 
 /// 위에 함수 사용
-void DrawBackGroundGradient(HDC hdc, HWND hwnd);
+void DrawBackGroundGradient(HDC hdc, HWND hWnd);
 
 void DrawBackGroundGradient(HDC hdc, HWND hWnd)
 {
@@ -275,7 +303,7 @@ void ScreenFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 };
 
-void HardestGameFont(HDC hdc, HWND hwnd)
+void HardestGameFont(HDC hdc, HWND hWnd)
 {
     HFONT HGFont, OldHGFont;
 
@@ -327,6 +355,30 @@ void MenuFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 }
 
+void DeathAndLevelFont(HDC hdc, HWND hWnd)
+{
+	HFONT DLFont, DLOldFont;
+
+    DLFont = CreateFont(
+        30, 0, 0, 0,
+        FW_BOLD,
+        FALSE,
+        FALSE,
+        FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_SWISS,
+        L"Arial"
+    );
+
+	DLOldFont = (HFONT)SelectObject(hdc, DLFont);
+
+    SetTextColor(hdc, RGB(0, 0, 0));
+    SetBkMode(hdc, TRANSPARENT);
+}
+
 /// 메뉴 정의
 enum GameState {
     MENU,
@@ -364,28 +416,60 @@ int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
 
 
 /// 게임 스테이지 선언
-int g_currentLevel = 1;
 
-void Level1(HDC hdc)
+void DrawLevelMap(HDC hdc)
 {
-    int mapX = g_mapRect.left;
-    int mapY = g_mapRect.top;
+    extern HBITMAP mapBitmaps[];
+    extern HDC memDCs[];
+    extern int ClientWidth;
 
-    if (memDCMap1)
+    int mapX = mapRect.left;
+    int mapY = mapRect.top;
+
+    int currentMapW = 700; 
+    int currentMapH = 300;
+    mapX = mapRect.left;
+
+    if (currentLevel >= 1 && currentLevel <= (sizeof(LevelSizes) / sizeof(LevelSizes[0])) - 1)
     {
-        BitBlt(hdc, mapX, mapY, MAP_WIDTH, MAP_HEIGHT, memDCMap1, 0, 0, SRCCOPY);
+        currentMapW = LevelSizes[currentLevel].w;
+        currentMapH = LevelSizes[currentLevel].h;
+    }
+
+    const int clientWidth = 1200;
+    mapX = (clientWidth - currentMapW) / 2;
+
+    mapY = mapRect.top;
+
+    if (currentLevel >= 1 && currentLevel <= MAX_LEVELS && memDCs[currentLevel] != NULL) {
+        BitBlt(hdc, mapX, mapY, currentMapW, currentMapH, memDCs[currentLevel], 0, 0, SRCCOPY);
     }
 }
 
-void Level2(HDC hdc)
-{
+typedef struct {
+    int startX, startY;
+} PlayerStartPoint;
 
-}
+typedef struct {
+    RECT goalRect;
+} LevelGoal;
+
+PlayerStartPoint startPoints[] = {
+    { 300, 300 }, // Level 1
+    { 330, 195 }, // Level 2
+    { 225, 325 }, // Level 3
+};
+
+LevelGoal levelGoals[] = {
+    { { 845, 205, 942, 395 } }, // Level 1
+    { { 795, 398, 943, 494 } }, // Level 2
+    { { 895, 270, 1042, 380 } }, // Level 3
+};
 
 /// 플레이어
-int playerX = 100;
-int playerY = 100;
-const int playerSpeed = 5;
+int playerX = 300;
+int playerY = 300;
+const int playerSpeed = 6 * 0.707;
 
 bool bKeyDown[256] = { false };
 
@@ -396,31 +480,32 @@ void PlayerPosition()
 
     if (bKeyDown[VK_LEFT])
     {
-        dx -= playerSpeed;
-	} else if(bKeyDown[VK_RIGHT])
+        dx = -playerSpeed;
+    }
+    if (bKeyDown[VK_RIGHT] && !bKeyDown[VK_LEFT])
     {
-        dx += playerSpeed;
+        dx = playerSpeed;
     }
     if (bKeyDown[VK_UP])
     {
-        dy -= playerSpeed;
+        dy = -playerSpeed;
     }
-    else if (bKeyDown[VK_DOWN])
+    if (bKeyDown[VK_DOWN] && !bKeyDown[VK_UP])
     {
-        dy += playerSpeed;
+        dy = playerSpeed;
     }
 
     if (dx != 0 && dy != 0)
     {
-        int diagonalSpeed = (int)(playerSpeed * 0.707);
-        if (dx < 0) dx = -diagonalSpeed;
-		if (dx > 0) dx = diagonalSpeed;
-		if (dy < 0) dy = -diagonalSpeed;
-		if (dy > 0) dy = diagonalSpeed;
+        if (dx < 0) dx = -playerSpeed;
+        else dx = playerSpeed;
 
-        playerX += dx;
-        playerY += dy;
+        if (dy < 0) dy = -playerSpeed;
+        else dy = playerSpeed;
     }
+
+    playerX += dx;
+    playerY += dy;
 }
 
 const int playerTotalSize = 37;
@@ -438,8 +523,9 @@ void drawPlayer(HDC hdc)
     BlackPen = CreatePen(PS_SOLID, playerBorderThickness, RGB(0, 0, 0));
 	BlackOldPen = (HPEN)SelectObject(hdc, BlackPen);
     
-    HBRUSH RedBrush;
+    HBRUSH RedBrush, RedOldBrush;
 	RedBrush = CreateSolidBrush(RGB(255, 0, 0));
+	RedOldBrush = (HBRUSH)SelectObject(hdc, RedBrush);
     
     HBRUSH BlackBrush, BlackOldBrush;
 	BlackBrush = CreateSolidBrush(RGB(0, 0, 0));
@@ -459,10 +545,199 @@ void drawPlayer(HDC hdc)
 
 	SelectObject(hdc, BlackOldPen);
     SelectObject(hdc, BlackOldBrush);
+	SelectObject(hdc, RedOldBrush);
     DeleteObject(BlackPen);
     DeleteObject(BlackBrush);
 	DeleteObject(RedBrush);
 }
+
+const int enemySize = 22;
+const int emenyBorderThinkness = 5;
+
+struct Enemy {
+    int x, y, direction, startX, endX;
+};
+
+#define MAX_GAME_ENEMIES 100
+Enemy enemies[MAX_GAME_ENEMIES];
+
+int currentEnemyCount = 0;
+int currentEnemySpeed = 0;
+
+void LoadLevelEnemies() {
+    if (currentLevel == 1) {
+        currentEnemySpeed = 5;
+        const int RANGE_START = 170;
+        const int RANGE_END = 430;
+
+        currentEnemyCount = 6;
+
+        enemies[0] = { 477, 200, 1, RANGE_START, RANGE_END };
+        enemies[1] = { 527, 200, 1, RANGE_START, RANGE_END };
+        enemies[2] = { 575, 400, -1, RANGE_START, RANGE_END };
+        enemies[3] = { 625, 400, -1, RANGE_START, RANGE_END };
+        enemies[4] = { 673, 200, 1, RANGE_START, RANGE_END };
+        enemies[5] = { 723, 200, 1, RANGE_START, RANGE_END };
+    }
+
+    else if (currentLevel == 2) {
+        currentEnemySpeed = 8;
+        const int RANGE_STARTLR = 275;
+        const int RANGE_ENDLR = 935;
+
+        currentEnemyCount = 3;
+
+        enemies[0] = { 256, 275, 1, RANGE_STARTLR, RANGE_ENDLR };
+        enemies[1] = { 943, 322, -1, RANGE_STARTLR, RANGE_ENDLR };
+        enemies[2] = { 256, 372, 1, RANGE_STARTLR, RANGE_ENDLR };
+    }
+
+    else if (currentLevel == 3) {
+        currentEnemySpeed = 6;
+        const int RANGE_START = 175;
+        const int RANGE_END = 465;
+
+        currentEnemyCount = 12;
+
+        enemies[0] = { 327, 175, 1, RANGE_START, RANGE_END };
+        enemies[1] = { 377, 475, -1, RANGE_START, RANGE_END };
+        enemies[2] = { 427, 175, 1, RANGE_START, RANGE_END };
+        enemies[3] = { 477, 475, -1, RANGE_START, RANGE_END };
+        enemies[4] = { 527, 175, 1, RANGE_START, RANGE_END };
+        enemies[5] = { 577, 475, -1, RANGE_START, RANGE_END };
+        enemies[6] = { 627, 175, 1, RANGE_START, RANGE_END };
+        enemies[7] = { 677, 475, -1, RANGE_START, RANGE_END };
+        enemies[8] = { 727, 175, 1, RANGE_START, RANGE_END };
+        enemies[9] = { 777, 475, -1, RANGE_START, RANGE_END };
+        enemies[10] = { 827, 175, 1, RANGE_START, RANGE_END };
+        enemies[11] = { 877, 475, -1, RANGE_START, RANGE_END };
+    }
+}
+
+void ResetPlayerToStart() {
+    if (currentLevel >= 1 && currentLevel <= (sizeof(startPoints) / sizeof(startPoints[0]))) {
+        playerX = startPoints[currentLevel - 1].startX;
+        playerY = startPoints[currentLevel - 1].startY;
+    }
+}
+
+void CheckLevelCompletion(HWND hWnd)
+{
+    extern const int playerTotalSize;
+
+    RECT playerRect = {
+            playerX - playerTotalSize / 2,
+            playerY - playerTotalSize / 2,
+            playerX + playerTotalSize / 2,
+            playerY + playerTotalSize / 2
+    };
+
+    if (currentLevel >= 1 && currentLevel <= (sizeof(levelGoals) / sizeof(levelGoals[0])))
+    {
+        RECT goalRect = levelGoals[currentLevel - 1].goalRect;
+
+        RECT tempRect;
+
+        if (IntersectRect(&tempRect, &playerRect, &goalRect)) {
+            if (currentLevel < MAX_LEVELS) {
+                currentLevel++;
+                ResetPlayerToStart();
+                LoadLevelEnemies();
+
+                InvalidateRect(hWnd, NULL, TRUE);
+            }
+        }
+    }
+}
+
+void EnemyMovementLR() {
+    for (int i = 0; i < currentEnemyCount; i++) {
+        enemies[i].x += enemies[i].direction * currentEnemySpeed;
+
+        if (enemies[i].x >= enemies[i].endX) {
+            enemies[i].direction = -1;
+        }
+        else if (enemies[i].x <= enemies[i].startX) {
+            enemies[i].direction = 1;
+        }
+    }
+}
+
+void EnemyMovementUD() {
+    for (int i = 0; i < currentEnemyCount; i++) {
+
+        enemies[i].y += enemies[i].direction * currentEnemySpeed;
+        if (enemies[i].y >= enemies[i].endX) {
+            enemies[i].direction = -1;
+        }
+        else if (enemies[i].y <= enemies[i].startX) {
+            enemies[i].direction = 1;
+        }
+    }
+}
+
+void drawEnemyBlue(HDC hdc) {
+	HPEN enemyBlackPen, enemyBlackOldPen;
+    enemyBlackPen = CreatePen(PS_SOLID, emenyBorderThinkness, RGB(0, 0, 0));
+    enemyBlackOldPen = (HPEN)SelectObject(hdc, enemyBlackPen);
+
+    HBRUSH enemyBlueBrush, enemyBlueOldBrush;
+    enemyBlueBrush = CreateSolidBrush(RGB(0, 0, 255));
+	enemyBlueOldBrush = (HBRUSH)SelectObject(hdc, enemyBlueBrush);
+
+    for (int i = 0; i < currentEnemyCount; i++) {
+		int centerX = enemies[i].x;
+		int centerY = enemies[i].y;
+
+        int halfSize = enemySize / 2;
+
+		int left = centerX - halfSize;
+		int top = centerY - halfSize;
+		int right = centerX + halfSize + (enemySize % 2);
+		int bottom = centerY + halfSize + (enemySize % 2);
+
+        Ellipse(hdc, left, top, right, bottom);
+    }
+
+    SelectObject(hdc, enemyBlackOldPen);
+    SelectObject(hdc, enemyBlueOldBrush);
+
+    DeleteObject(enemyBlackPen);
+    DeleteObject(enemyBlueBrush);
+}
+
+int deaths = 0;
+
+void CheckEnemyCollision() {
+    extern const int playerTotalSize;
+    extern const int enemySize;
+
+    for (int i = 0; i < currentEnemyCount; i++) {
+        RECT playerRect = {
+            playerX - playerTotalSize / 2,
+            playerY - playerTotalSize / 2,
+            playerX + playerTotalSize / 2,
+            playerY + playerTotalSize / 2
+        };
+
+        int halfEnemySize = enemySize / 2;
+        RECT enemyRect = {
+            enemies[i].x - halfEnemySize,
+            enemies[i].y - halfEnemySize,
+            enemies[i].x + halfEnemySize,
+            enemies[i].y + halfEnemySize
+        };
+
+        RECT tempRect;
+
+        if (IntersectRect(&tempRect, &playerRect, &enemyRect)) {
+            deaths++;
+            ResetPlayerToStart();
+            return;
+        }
+    }
+}
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -502,6 +777,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC hdc = GetDC(hWnd);
         ScreenFont(hdc, hWnd);
 
+        WCHAR buf[32] = { 0, };
+        wsprintf(buf, L"클릭 좌표 : X : %d, Y : %d", mouseX, mouseY);
+        MessageBox(hWnd, buf, L"좌표 확인", MB_OK);
         if (currentStage == MENU)
         {
             for (int i = 0; i <= menuItem_count; i++)
@@ -563,13 +841,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
     case WM_CREATE:
     {
+        LoadLevelEnemies();
+
         SetTimer(hWnd, 1, 1000 / 60, NULL);
+
     }
     break;
     case WM_TIMER:
     {
-        PlayerPosition();
-        InvalidateRect(hWnd, NULL, TRUE);
+        if (currentStage == PLAYING)
+        {
+            PlayerPosition();
+
+            if (currentLevel == 1) {
+                EnemyMovementUD(); 
+            }
+            else if (currentLevel == 2) {
+                EnemyMovementLR();
+            }
+            else if (currentLevel == 3) {
+                EnemyMovementUD();
+            }
+            else if (currentLevel == 4) {
+			}
+            else if (currentLevel == 5) {
+            }
+            else if (currentLevel == 6) {
+            }
+            else if (currentLevel == 7) {
+            }
+            else if (currentLevel == 8) {
+            }
+            else if (currentLevel == 9) {
+            }
+            else if (currentLevel == 10) {
+			}
+
+            if (currentLevel >= 1 && currentLevel <= 10) {
+                CheckEnemyCollision();
+                CheckLevelCompletion(hWnd);
+                InvalidateRect(hWnd, NULL, TRUE);
+            }
+        }
     }
     break;
     case WM_PAINT:
@@ -621,34 +934,56 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             HBRUSH PlayingBrush = NULL;
 
-            if (g_currentLevel >= 1 && g_currentLevel < 5)
+            if (currentLevel >= 1 && currentLevel < 5)
             {
                 PlayingBrush = CreateSolidBrush(RGB(181, 181, 255));
 
 				FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (g_currentLevel >= 5 && g_currentLevel < 9)
+            else if (currentLevel >= 5 && currentLevel < 9)
             {
                 PlayingBrush = CreateSolidBrush(RGB(214, 188, 249));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (g_currentLevel >= 9 && g_currentLevel <= 10)
+            else if (currentLevel >= 9 && currentLevel <= 10)
             {
                 PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (g_currentLevel == 11)
+            else if (currentLevel == 11)
             {
                 /// 클리어 화면
             }
 
-            if (g_currentLevel == 1)
-            {
-                Level1(hdc);
+            DeathAndLevelFont(hdc, hWnd);
+
+            WCHAR deathBuf[64] = { 0, };
+            wsprintf(deathBuf, L"DEATHS : %d", deaths);
+			TextOut(hdc, 10, 10, deathBuf, lstrlenW(deathBuf));
+
+            WCHAR LevelBuf[64] = { 0, };
+			wsprintf(LevelBuf, L"LEVEL : %d / 10", currentLevel);
+			TextOut(hdc, 10, 40, LevelBuf, lstrlenW(LevelBuf));
+
+            if (currentLevel >= 1 && currentLevel < 5) {
+                DrawLevelMap(hdc);
                 drawPlayer(hdc);
+                drawEnemyBlue(hdc);
+			}
+            else if (currentLevel >= 5 && currentLevel < 9) {
+                DrawLevelMap(hdc);
+                drawPlayer(hdc);
+                //drawEnemyPurple(hdc);
             }
+            else {
+                DrawLevelMap(hdc);
+                drawPlayer(hdc);
+                //drawEnemyRed(hdc);
+            }
+
+             
         }
         else if (currentStage == LOADING)
         {
@@ -658,21 +993,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             DrawBackGroundGradient(hdc, hWnd);
         }
-
         EndPaint(hWnd, &ps);
     }
     break;
     case WM_DESTROY:
-        if (memDCMap1)
-        {
-            DeleteDC(memDCMap1);
-        }
-        if (mapLv1)
-        {
-			DeleteObject(mapLv1);
+    {
+        extern HBITMAP g_mapBitmaps[];
+        extern HDC g_memDCs[];
+
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            if (memDCs[i]) {
+                DeleteDC(memDCs[i]);
+            }
+            if (mapBitmaps[i]) {
+                DeleteObject(mapBitmaps[i]);
+            }
         }
         PostQuitMessage(0);
-        break;
+    }
+    break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
