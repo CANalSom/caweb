@@ -227,7 +227,110 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 /// 배경색의 전체 화면 : FillRect( ) API
 
 /// 위에 함수 사용
-void DrawBackGroundGradient(HDC hdc, HWND hWnd);
+const int enemySize = 22;
+const int emenyBorderThinkness = 5;
+
+enum EnemyMovementType {
+    MOVE_LR,
+    MOVE_UD
+};
+
+struct Enemy {
+    int x, y, direction, start, end;
+    EnemyMovementType type;
+    double speed;
+};
+
+#define MAX_GAME_ENEMIES 100
+Enemy enemies[MAX_GAME_ENEMIES];
+
+int currentEnemyCount = 0;
+
+#define MOVE_SQUARE 2
+
+
+enum GameState {
+    MENU,
+    PLAYING,
+    LOADING,
+    SETTING,
+
+    TUTORIAL_INTRO,
+    CLEARED
+};
+
+GameState currentStage = MENU;
+
+typedef struct {
+    const wchar_t* text;
+    int id;
+    RECT rect;
+} ButtonClick;
+
+ButtonClick menuList[] = {
+    { L"START GAME", ITEM_START_GAME, { 100, 300, 300, 350 } } ,
+    { L"LOAD GAME", ITEM_LOAD_GAME, { 100, 370, 280, 420 } },
+    { L"SETTING", ITEM_SETTING, { 100, 440, 235, 490 } },
+    { L"EXIT", ITEM_EXIT, { 100, 510, 170, 560 } }
+};
+
+ButtonClick clickItem[] = {
+    L"BACK", ITEM_FIRSTSCREENT, { 350, 400, 450, 450 },
+    L"CONTINUE", ITEM_PLAY, { 650, 400, 800, 450 }
+};
+
+ButtonClick clearedButton = {
+    L"MENU",
+    ITEM_EXIT_TO_MENU,
+    { 500, 400, 700, 500 }
+};
+
+int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
+int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
+
+typedef struct {
+    int startX, startY;
+} PlayerStartPoint;
+
+typedef struct {
+    RECT goalRect;
+} LevelGoal;
+
+PlayerStartPoint startPoints[] = {
+    { 308, 322 },    // Level 1
+    { 330, 195 },    // Level 2
+    { 225, 325 },    // Level 3
+    { 600,  67 },     // Level 4
+    { 176, 142 },    // Level 5
+    { 178, 419 },    // Level 6
+    { 177, 180 },    // Level 7
+};
+
+LevelGoal levelGoals[] = {
+    { { 845, 231, 942, 418 } },     // Level 1
+    { { 795, 398, 943, 494 } },     // Level 2
+    { { 895, 270, 1042, 380 } },    // Level 3
+    { { 548, 529, 653, 628 } },     // Level 4
+    { { 975, 462, 1069, 554 } },    // Level 5
+    { { 975, 180, 1069, 277 } },    // Level 6
+    { { 130, 420, 225, 515 } },     // Level 7
+};
+
+/// 플레이어
+int playerX = 308;
+int playerY = 322;
+const int playerSpeed = 7 * 0.714;
+
+bool bKeyDown[256] = { false };
+
+const int playerTotalSize = 35;
+const int playerBorderThickness = 5;
+const int playerInnerSize = playerTotalSize - (playerBorderThickness * 2);
+
+int deaths = 0;
+
+
+
 
 void DrawBackGroundGradient(HDC hdc, HWND hWnd)
 {
@@ -272,7 +375,7 @@ void DrawBackGroundGradient(HDC hdc, HWND hWnd)
     GradientFill(hdc, vertex, 2 /*사용할 정점*/, &gRect, 1 /*채울 영역*/, GRADIENT_FILL_RECT_V);
 }
 
-/// 내용 글꼴 사용 함수
+
 void ScreenFont(HDC hdc, HWND hWnd)
 {
     HFONT Font, OldFont;
@@ -300,6 +403,7 @@ void ScreenFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 };
 
+
 void HardestGameFont(HDC hdc, HWND hWnd)
 {
     HFONT HGFont, OldHGFont;
@@ -324,10 +428,9 @@ void HardestGameFont(HDC hdc, HWND hWnd)
     DeleteObject(OldHGFont);
 }
 
-/// 글꼴 버튼 누르기 전용 사용
+
 void MenuFont(HDC hdc, HWND hWnd)
 {
-    /// 메뉴 항목
     HFONT menuFont, menuOldFont;
 
     menuFont = CreateFont(
@@ -351,6 +454,7 @@ void MenuFont(HDC hdc, HWND hWnd)
     SetTextColor(hdc, RGB(81, 83, 95));
     SetBkMode(hdc, TRANSPARENT);
 }
+
 
 void DeathAndLevelFont(HDC hdc, HWND hWnd)
 {
@@ -376,50 +480,6 @@ void DeathAndLevelFont(HDC hdc, HWND hWnd)
     SetBkMode(hdc, TRANSPARENT);
 }
 
-/// 메뉴 정의
-enum GameState {
-    MENU,
-    PLAYING,
-    LOADING,
-    SETTING,
-
-    /// 상태 화면 만들기
-    TUTORIAL_INTRO,
-    CLEARED
-};
-
-GameState currentStage = MENU; /// 게임 시작 시 초기 상태를 메뉴로 설정한다.
-
-/// 메뉴 항목 구조체
-typedef struct {
-    const wchar_t* text;
-    int id;
-    RECT rect;
-} ButtonClick;
-
-ButtonClick menuList[] = {
-    { L"START GAME", ITEM_START_GAME, { 100, 300, 300, 350 } } ,
-    { L"LOAD GAME", ITEM_LOAD_GAME, { 100, 370, 280, 420 } },
-    { L"SETTING", ITEM_SETTING, { 100, 440, 235, 490 } },
-    { L"EXIT", ITEM_EXIT, { 100, 510, 170, 560 } }
-};
-
-ButtonClick clickItem[] = {
-    L"BACK", ITEM_FIRSTSCREENT, { 350, 400, 450, 450 },
-    L"CONTINUE", ITEM_PLAY, { 650, 400, 800, 450 }
-};
-
-ButtonClick clearedButton = {
-    L"MENU",
-	ITEM_EXIT_TO_MENU,
-    { 500, 400, 700, 500 }
-};
-
-int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
-int clickItem_count = sizeof(clickItem) / sizeof(clickItem[0]);
-
-
-/// 게임 스테이지 선언
 
 void DrawLevelMap(HDC hdc)
 {
@@ -451,40 +511,6 @@ void DrawLevelMap(HDC hdc)
     }
 }
 
-typedef struct {
-    int startX, startY;
-} PlayerStartPoint;
-
-typedef struct {
-    RECT goalRect;
-} LevelGoal;
-
-PlayerStartPoint startPoints[] = {
-    { 308, 322 },    // Level 1
-    { 330, 195 },    // Level 2
-    { 225, 325 },    // Level 3
-	{ 600,  67 },     // Level 4
-    { 176, 142 },    // Level 5
-    { 178, 419 },    // Level 6
-    { 177, 180 },    // Level 7
-};
-
-LevelGoal levelGoals[] = {
-    { { 845, 231, 942, 418 } },     // Level 1
-    { { 795, 398, 943, 494 } },     // Level 2
-    { { 895, 270, 1042, 380 } },    // Level 3
-	{ { 548, 529, 653, 628 } },     // Level 4
-    { { 975, 462, 1069, 554 } },    // Level 5
-    { { 975, 180, 1069, 277 } },    // Level 6
-    { { 130, 420, 225, 515 } },     // Level 7
-};
-
-/// 플레이어
-int playerX = 308;
-int playerY = 322;
-const int playerSpeed = 7 * 0.714;
-
-bool bKeyDown[256] = { false };
 
 void PlayerPosition()
 {
@@ -521,9 +547,6 @@ void PlayerPosition()
     playerY += dy;
 }
 
-const int playerTotalSize = 35;
-const int playerBorderThickness = 5;
-const int playerInnerSize = playerTotalSize - (playerBorderThickness * 2);
 
 void drawPlayer(HDC hdc)
 {
@@ -564,26 +587,6 @@ void drawPlayer(HDC hdc)
 	DeleteObject(RedBrush);
 }
 
-const int enemySize = 22;
-const int emenyBorderThinkness = 5;
-
-enum EnemyMovementType {
-    MOVE_LR,
-    MOVE_UD
-};
-
-struct Enemy {
-    int x, y, direction, start, end;
-    EnemyMovementType type;
-    double speed;
-};
-
-#define MAX_GAME_ENEMIES 100
-Enemy enemies[MAX_GAME_ENEMIES];
-
-int currentEnemyCount = 0;
-
-#define MOVE_SQUARE 2
 
 void LoadLevelEnemies() {
     currentEnemyCount = 0;
@@ -798,12 +801,14 @@ void LoadLevelEnemies() {
     }
 }
 
+
 void ResetPlayerToStart() {
     if (currentLevel >= 1 && currentLevel <= (sizeof(startPoints) / sizeof(startPoints[0]))) {
         playerX = startPoints[currentLevel - 1].startX;
         playerY = startPoints[currentLevel - 1].startY;
     }
 }
+
 
 void CheckLevelCompletion(HWND hWnd)
 {
@@ -839,6 +844,7 @@ void CheckLevelCompletion(HWND hWnd)
     }
 }
 
+
 void UpdateEnemiesMovement() {
     for (int i = 0; i < currentEnemyCount; i++) {
 		Enemy* e = &enemies[i];
@@ -864,6 +870,7 @@ void UpdateEnemiesMovement() {
         }
     }
 }
+
 
 void drawEnemyBlue(HDC hdc) {
 	HPEN enemyBlackPen, enemyBlackOldPen;
@@ -895,6 +902,7 @@ void drawEnemyBlue(HDC hdc) {
     DeleteObject(enemyBlueBrush);
 }
 
+
 void drawEnemyPurple(HDC hdc) {
     HPEN enemyBlackPen, enemyBlackOldPen;
     enemyBlackPen = CreatePen(PS_SOLID, emenyBorderThinkness, RGB(0, 0, 0));
@@ -924,6 +932,7 @@ void drawEnemyPurple(HDC hdc) {
     DeleteObject(enemyBlackPen);
     DeleteObject(enemyPurpleBrush);
 }
+
 
 void drawEnemyRed(HDC hdc) {
     HPEN enemyBlackPen, enemyBlackOldPen;
@@ -955,7 +964,6 @@ void drawEnemyRed(HDC hdc) {
     DeleteObject(enemyRedBrush);
 }
 
-int deaths = 0;
 
 void CheckEnemyCollision() {
     extern const int playerTotalSize;
@@ -986,6 +994,7 @@ void CheckEnemyCollision() {
         }
     }
 }
+
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
