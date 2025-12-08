@@ -101,28 +101,25 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 /// 맵
 #define MAP_WIDTH  700
 #define MAP_HEIGHT 300
-RECT mapRect = { 250, 150, 1000, 600 };
+//RECT mapRect = { 250, 150, 1000, 600 };
+RECT mapRect = { 0, 150, 1200, 600 };
 
 const struct { int w, h; } LevelSizes[] = {
     { 0, 0 },
     { 700, 300 }, // Level 1 (기본)
     { 700, 350 }, // Level 2 
     { 900, 340 },  // Level 3
-    { 300, 100 },  // Level 4
-    { 700, 300 },  // Level 5
-    { 700, 450 },  // Level 6
-    { 700, 300 },  // Level 7
-    { 700, 500 },  // Level 8
-    { 700, 300 },  // Level 9
-    { 700, 600 },  // Level 10
-	{ 700, 300 }   // Level 11 (최종)
+    { 540, 620 },  // Level 4
+    { 950, 470 },  // Level 5
+    { 950, 300 },  // Level 6
+    { 950, 400 },  // Level 7
 };
 
-#define MAX_LEVELS 11
+#define MAX_LEVELS 7
 HBITMAP mapBitmaps[MAX_LEVELS + 1] = { 0, };
 HDC memDCs[MAX_LEVELS + 1] = { 0, };
 
-int currentLevel = 1;
+int currentLevel = 7;
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -225,6 +222,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 /// 취소 및 계속
 #define ITEM_FIRSTSCREENT        5
 #define ITEM_PLAY                6
+#define ITEM_EXIT_TO_MENU        7
 
 
 /// 배경색의 전체 화면 : FillRect( ) API
@@ -387,7 +385,8 @@ enum GameState {
     SETTING,
 
     /// 상태 화면 만들기
-    TUTORIAL_INTRO
+    TUTORIAL_INTRO,
+    CLEARED
 };
 
 GameState currentStage = MENU; /// 게임 시작 시 초기 상태를 메뉴로 설정한다.
@@ -409,6 +408,12 @@ ButtonClick menuList[] = {
 ButtonClick clickItem[] = {
     L"BACK", ITEM_FIRSTSCREENT, { 350, 400, 450, 450 },
     L"CONTINUE", ITEM_PLAY, { 650, 400, 800, 450 }
+};
+
+ButtonClick clearedButton = {
+    L"END",
+	ITEM_EXIT_TO_MENU,
+    { 500, 400, 700, 500 }
 };
 
 int menuItem_count = sizeof(menuList) / sizeof(menuList[0]);
@@ -437,9 +442,10 @@ void DrawLevelMap(HDC hdc)
     }
 
     const int clientWidth = 1200;
-    mapX = (clientWidth - currentMapW) / 2;
+    const int clientHeight = 650;
 
-    mapY = mapRect.top;
+    mapX = (clientWidth - currentMapW) / 2;
+    mapY = (clientHeight - currentMapH) / 2;
 
     if (currentLevel >= 1 && currentLevel <= MAX_LEVELS && memDCs[currentLevel] != NULL) {
         BitBlt(hdc, mapX, mapY, currentMapW, currentMapH, memDCs[currentLevel], 0, 0, SRCCOPY);
@@ -455,21 +461,29 @@ typedef struct {
 } LevelGoal;
 
 PlayerStartPoint startPoints[] = {
-    { 300, 300 }, // Level 1
-    { 330, 195 }, // Level 2
-    { 225, 325 }, // Level 3
+    { 308, 322 },    // Level 1
+    { 330, 195 },    // Level 2
+    { 225, 325 },    // Level 3
+	{ 600,  67 },     // Level 4
+    { 176, 142 },    // Level 5
+    { 178, 419 },    // Level 6
+    { 177, 180 },    // Level 7
 };
 
 LevelGoal levelGoals[] = {
-    { { 845, 205, 942, 395 } }, // Level 1
-    { { 795, 398, 943, 494 } }, // Level 2
-    { { 895, 270, 1042, 380 } }, // Level 3
+    { { 845, 231, 942, 418 } },     // Level 1
+    { { 795, 398, 943, 494 } },     // Level 2
+    { { 895, 270, 1042, 380 } },    // Level 3
+	{ { 548, 529, 653, 628 } },     // Level 4
+    { { 975, 462, 1069, 554 } },    // Level 5
+    { { 975, 180, 1069, 277 } },    // Level 6
+    { { 130, 421, 224, 517 } },     // Level 7
 };
 
 /// 플레이어
-int playerX = 300;
-int playerY = 300;
-const int playerSpeed = 6 * 0.707;
+int playerX = 308;
+int playerY = 322;
+const int playerSpeed = 7 * 0.714;
 
 bool bKeyDown[256] = { false };
 
@@ -508,7 +522,7 @@ void PlayerPosition()
     playerY += dy;
 }
 
-const int playerTotalSize = 37;
+const int playerTotalSize = 35;
 const int playerBorderThickness = 5;
 const int playerInnerSize = playerTotalSize - (playerBorderThickness * 2);
 
@@ -554,63 +568,285 @@ void drawPlayer(HDC hdc)
 const int enemySize = 22;
 const int emenyBorderThinkness = 5;
 
+enum EnemyMovementType {
+    MOVE_LR,
+    MOVE_UD
+};
+
 struct Enemy {
-    int x, y, direction, startX, endX;
+    int x, y, direction, start, end;
+    EnemyMovementType type;
+    double speed;
 };
 
 #define MAX_GAME_ENEMIES 100
 Enemy enemies[MAX_GAME_ENEMIES];
 
 int currentEnemyCount = 0;
-int currentEnemySpeed = 0;
+
+#define MOVE_SQUARE 2
 
 void LoadLevelEnemies() {
     if (currentLevel == 1) {
-        currentEnemySpeed = 5;
-        const int RANGE_START = 170;
-        const int RANGE_END = 430;
+        double speed = 6.0;
+        const int RANGE_START = 195;
+        const int RANGE_END = 455;
 
         currentEnemyCount = 6;
 
-        enemies[0] = { 477, 200, 1, RANGE_START, RANGE_END };
-        enemies[1] = { 527, 200, 1, RANGE_START, RANGE_END };
-        enemies[2] = { 575, 400, -1, RANGE_START, RANGE_END };
-        enemies[3] = { 625, 400, -1, RANGE_START, RANGE_END };
-        enemies[4] = { 673, 200, 1, RANGE_START, RANGE_END };
-        enemies[5] = { 723, 200, 1, RANGE_START, RANGE_END };
+        enemies[0] = { 477, 200, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[1] = { 527, 200, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[2] = { 575, 450, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[3] = { 625, 450, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[4] = { 673, 200, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[5] = { 723, 200, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
     }
 
     else if (currentLevel == 2) {
-        currentEnemySpeed = 8;
+        double speed = 9.0;
         const int RANGE_STARTLR = 275;
-        const int RANGE_ENDLR = 935;
+        const int RANGE_ENDLR = 925;
 
-        currentEnemyCount = 3;
+        currentEnemyCount = 7;
 
-        enemies[0] = { 256, 275, 1, RANGE_STARTLR, RANGE_ENDLR };
-        enemies[1] = { 943, 322, -1, RANGE_STARTLR, RANGE_ENDLR };
-        enemies[2] = { 256, 372, 1, RANGE_STARTLR, RANGE_ENDLR };
+        enemies[0] = { 256, 275, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[1] = { 943, 324, -1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[2] = { 256, 373, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+
+        const int RANGE_STARTUD = 265;
+        const int RANGE_ENDUD = 385;
+
+        speed = 4.0;
+
+        enemies[3] = { 427, 255, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[4] = { 476, 255, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[5] = { 721, 255, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[6] = { 770, 255, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
     }
 
     else if (currentLevel == 3) {
-        currentEnemySpeed = 6;
+        double speed = 6.0;
         const int RANGE_START = 175;
         const int RANGE_END = 465;
 
         currentEnemyCount = 12;
 
-        enemies[0] = { 327, 175, 1, RANGE_START, RANGE_END };
-        enemies[1] = { 377, 475, -1, RANGE_START, RANGE_END };
-        enemies[2] = { 427, 175, 1, RANGE_START, RANGE_END };
-        enemies[3] = { 477, 475, -1, RANGE_START, RANGE_END };
-        enemies[4] = { 527, 175, 1, RANGE_START, RANGE_END };
-        enemies[5] = { 577, 475, -1, RANGE_START, RANGE_END };
-        enemies[6] = { 627, 175, 1, RANGE_START, RANGE_END };
-        enemies[7] = { 677, 475, -1, RANGE_START, RANGE_END };
-        enemies[8] = { 727, 175, 1, RANGE_START, RANGE_END };
-        enemies[9] = { 777, 475, -1, RANGE_START, RANGE_END };
-        enemies[10] = { 827, 175, 1, RANGE_START, RANGE_END };
-        enemies[11] = { 877, 475, -1, RANGE_START, RANGE_END };
+        enemies[0] = { 328, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[1] = { 378, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[2] = { 427, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[3] = { 477, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[4] = { 526, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[5] = { 576, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[6] = { 625, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[7] = { 675, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[8] = { 724, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[9] = { 774, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[10] = { 823, 175, 1, RANGE_START, RANGE_END, MOVE_UD, speed };
+        enemies[11] = { 873, 475, -1, RANGE_START, RANGE_END, MOVE_UD, speed };
+    }
+
+    else if (currentLevel == 4) {
+        double speed = 10.0;
+        const int RANGE_STARTUD = 140;
+        const int RANGE_ENDUD = 510;
+
+        currentEnemyCount = 16;
+
+        enemies[0] = { 415, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[1] = { 520, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[2] = { 625, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[3] = { 730, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        enemies[4] = { 468, 500, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[5] = { 573, 500, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[6] = { 677, 500, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[7] = { 783, 500, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        const int RANGE_STARTLR = 410;
+        const int RANGE_ENDLR = 780;
+
+        enemies[8] = { 400, 200, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[9] = { 400, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[10] = { 400, 400, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[11] = { 400, 500, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+        enemies[12] = { 770, 150, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[13] = { 770, 250, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[14] = { 770, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[15] = { 770, 450, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+    }
+
+    else if (currentLevel == 5) {
+        double speed = 4.0;
+        const int RANGE_STARTUD = 125;
+        const int RANGE_ENDUD = 535;
+
+        currentEnemyCount = 20;
+
+        enemies[0] = { 247, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[1] = { 342, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[2] = { 435, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[3] = { 530, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[4] = { 625, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[5] = { 720, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[6] = { 810, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[7] = { 905, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        enemies[8] = { 297, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[9] = { 392, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[10] = { 485, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[11] = { 580, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[12] = { 675, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[13] = { 770, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[14] = { 860, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[15] = { 955, 535, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        speed = 9.0;
+
+        int RANGE_STARTLR = 435;
+        int RANGE_ENDLR = 715;
+        enemies[16] = { 435, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[17] = { 435, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+        RANGE_STARTLR = 485;
+        RANGE_ENDLR = 765;
+        enemies[18] = { 485, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[19] = { 485, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+    }
+
+    else if (currentLevel == 6) {
+        double speed = 9.0;
+
+        const int RANGE_STARTUD = 195;
+        const int RANGE_ENDUD = 455;
+
+        currentEnemyCount = 36;
+
+        enemies[0] = { 247, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[1] = { 342, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[2] = { 435, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[3] = { 530, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[4] = { 623, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[5] = { 718, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[6] = { 810, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[7] = { 905, 455, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        enemies[8] = { 297, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[9] = { 392, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[10] = { 485, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[11] = { 580, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[12] = { 673, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[13] = { 768, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[14] = { 860, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[15] = { 953, 185, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        int RANGE_STARTLR = 235;
+        int RANGE_ENDLR = 400;
+
+        speed = 6.0;
+
+        enemies[16] = { 225, 445, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[17] = { 225, 400, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[18] = { 225, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[19] = { 225, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[20] = { 225, 205, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+        RANGE_STARTLR = 425;
+        RANGE_ENDLR = 590;
+
+        enemies[21] = { 415, 445, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[22] = { 415, 255, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[23] = { 415, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[24] = { 415, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[25] = { 415, 205, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+        RANGE_STARTLR = 615;
+        RANGE_ENDLR = 780;
+
+        enemies[26] = { 605, 445, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[27] = { 605, 255, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[28] = { 605, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[29] = { 605, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[30] = { 605, 205, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+
+        RANGE_STARTLR = 805;
+        RANGE_ENDLR = 970;
+
+        enemies[31] = { 795, 445, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[32] = { 795, 400, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[33] = { 795, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[34] = { 795, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[35] = { 795, 205, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+    }
+    else if (currentLevel == 7) {
+
+        double speed = 10;
+
+        const int RANGE_STARTUD = 145;
+        const int RANGE_ENDUD = 505;
+
+        currentEnemyCount = 51;
+
+        enemies[0] = { 250, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[1] = { 390, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[2] = { 530, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[3] = { 670, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[4] = { 810, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[5] = { 950, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        speed = 6;
+
+        enemies[6] = { 295, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[7] = { 435, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[8] = { 575, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[9] = { 715, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[10] = { 860, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[11] = { 1000, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        speed = 4;
+        enemies[12] = { 345, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[13] = { 485, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[14] = { 625, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[15] = { 765, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[16] = { 905, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[17] = { 1045, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+        speed = 0;
+        enemies[19] = { 250, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[20] = { 295, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[21] = { 345, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[22] = { 390, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[23] = { 435, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[24] = { 485, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[25] = { 530, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[26] = { 575, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[27] = { 625, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+		enemies[28] = { 670, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[29] = { 715, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[30] = { 765, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[31] = { 810, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[32] = { 860, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[33] = { 905, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+        enemies[34] = { 950, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
+		enemies[35] = { 250, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[36] = { 295, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[37] = { 345, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[38] = { 390, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[39] = { 435, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[40] = { 485, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[41] = { 530, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[42] = { 575, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[43] = { 625, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[44] = { 670, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[45] = { 715, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[46] = { 765, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[47] = { 810, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[48] = { 860, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+        enemies[49] = { 905, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
+		enemies[50] = { 950, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
+
     }
 }
 
@@ -650,28 +886,28 @@ void CheckLevelCompletion(HWND hWnd)
     }
 }
 
-void EnemyMovementLR() {
+void UpdateEnemiesMovement() {
     for (int i = 0; i < currentEnemyCount; i++) {
-        enemies[i].x += enemies[i].direction * currentEnemySpeed;
+		Enemy* e = &enemies[i];
 
-        if (enemies[i].x >= enemies[i].endX) {
-            enemies[i].direction = -1;
-        }
-        else if (enemies[i].x <= enemies[i].startX) {
-            enemies[i].direction = 1;
-        }
-    }
-}
+        if (e->type == MOVE_LR) {
+            e->x += e->direction * e->speed;
 
-void EnemyMovementUD() {
-    for (int i = 0; i < currentEnemyCount; i++) {
-
-        enemies[i].y += enemies[i].direction * currentEnemySpeed;
-        if (enemies[i].y >= enemies[i].endX) {
-            enemies[i].direction = -1;
+            if (e->x >= e->end) {
+                e->direction = -1;
+            }
+            else if (e->x <= e->start) {
+                e->direction = 1;
+            }
         }
-        else if (enemies[i].y <= enemies[i].startX) {
-            enemies[i].direction = 1;
+        else if (e->type == MOVE_UD) {
+            e->y += e->direction * e->speed;
+            if (e->y >= e->end) {
+                e->direction = -1;
+            }
+            else if (e->y <= e->start) {
+                e->direction = 1;
+			}
         }
     }
 }
@@ -706,6 +942,66 @@ void drawEnemyBlue(HDC hdc) {
     DeleteObject(enemyBlueBrush);
 }
 
+void drawEnemyPurple(HDC hdc) {
+    HPEN enemyBlackPen, enemyBlackOldPen;
+    enemyBlackPen = CreatePen(PS_SOLID, emenyBorderThinkness, RGB(0, 0, 0));
+    enemyBlackOldPen = (HPEN)SelectObject(hdc, enemyBlackPen);
+
+    HBRUSH enemyPurpleBrush, enemyPurpleOldBrush;
+    enemyPurpleBrush = CreateSolidBrush(RGB(94, 58, 185));
+    enemyPurpleOldBrush = (HBRUSH)SelectObject(hdc, enemyPurpleBrush);
+
+    for (int i = 0; i < currentEnemyCount; i++) {
+        int centerX = enemies[i].x;
+        int centerY = enemies[i].y;
+
+        int halfSize = enemySize / 2;
+
+        int left = centerX - halfSize;
+        int top = centerY - halfSize;
+        int right = centerX + halfSize + (enemySize % 2);
+        int bottom = centerY + halfSize + (enemySize % 2);
+
+        Ellipse(hdc, left, top, right, bottom);
+    }
+
+    SelectObject(hdc, enemyBlackOldPen);
+    SelectObject(hdc, enemyPurpleOldBrush);
+
+    DeleteObject(enemyBlackPen);
+    DeleteObject(enemyPurpleBrush);
+}
+
+void drawEnemyRed(HDC hdc) {
+    HPEN enemyBlackPen, enemyBlackOldPen;
+    enemyBlackPen = CreatePen(PS_SOLID, emenyBorderThinkness, RGB(0, 0, 0));
+    enemyBlackOldPen = (HPEN)SelectObject(hdc, enemyBlackPen);
+
+    HBRUSH enemyRedBrush, enemyRedOldBrush;
+    enemyRedBrush = CreateSolidBrush(RGB(255, 0, 0));
+    enemyRedOldBrush = (HBRUSH)SelectObject(hdc, enemyRedBrush);
+
+    for (int i = 0; i < currentEnemyCount; i++) {
+        int centerX = enemies[i].x;
+        int centerY = enemies[i].y;
+
+        int halfSize = enemySize / 2;
+
+        int left = centerX - halfSize;
+        int top = centerY - halfSize;
+        int right = centerX + halfSize + (enemySize % 2);
+        int bottom = centerY + halfSize + (enemySize % 2);
+
+        Ellipse(hdc, left, top, right, bottom);
+    }
+
+    SelectObject(hdc, enemyBlackOldPen);
+    SelectObject(hdc, enemyRedOldBrush);
+
+    DeleteObject(enemyBlackPen);
+    DeleteObject(enemyRedBrush);
+}
+
 int deaths = 0;
 
 void CheckEnemyCollision() {
@@ -738,7 +1034,6 @@ void CheckEnemyCollision() {
     }
 }
 
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -770,6 +1065,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     }
     break;
+    case WM_RBUTTONDOWN:
+    {
+        int mouseX = LOWORD(lParam);
+        int mouseY = HIWORD(lParam);
+        WCHAR buf[32] = { 0, };
+        wsprintf(buf, L"클릭 좌표 : X : %d, Y : %d", mouseX, mouseY);
+        MessageBox(hWnd, buf, L"좌표 확인", MB_OK);
+    }
+    break;
     case WM_LBUTTONDOWN:
     {
         int mouseX = LOWORD(lParam);
@@ -777,9 +1081,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC hdc = GetDC(hWnd);
         ScreenFont(hdc, hWnd);
 
-        WCHAR buf[32] = { 0, };
-        wsprintf(buf, L"클릭 좌표 : X : %d, Y : %d", mouseX, mouseY);
-        MessageBox(hWnd, buf, L"좌표 확인", MB_OK);
         if (currentStage == MENU)
         {
             for (int i = 0; i <= menuItem_count; i++)
@@ -842,9 +1143,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
     {
         LoadLevelEnemies();
-
         SetTimer(hWnd, 1, 1000 / 60, NULL);
-
     }
     break;
     case WM_TIMER:
@@ -854,13 +1153,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PlayerPosition();
 
             if (currentLevel == 1) {
-                EnemyMovementUD(); 
             }
             else if (currentLevel == 2) {
-                EnemyMovementLR();
             }
             else if (currentLevel == 3) {
-                EnemyMovementUD();
             }
             else if (currentLevel == 4) {
 			}
@@ -870,14 +1166,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (currentLevel == 7) {
             }
-            else if (currentLevel == 8) {
-            }
-            else if (currentLevel == 9) {
-            }
-            else if (currentLevel == 10) {
-			}
 
-            if (currentLevel >= 1 && currentLevel <= 10) {
+            if (currentLevel >= 1 && currentLevel <= 7) {
+                UpdateEnemiesMovement();
                 CheckEnemyCollision();
                 CheckLevelCompletion(hWnd);
                 InvalidateRect(hWnd, NULL, TRUE);
@@ -890,6 +1181,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+        int width = clientRect.right;
+        int height = clientRect.bottom;
+
+        HDC hdcMem = CreateCompatibleDC(hdc);
+        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
 
         if (currentStage == MENU)
         {
@@ -934,28 +1234,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             HBRUSH PlayingBrush = NULL;
 
-            if (currentLevel >= 1 && currentLevel < 5)
+            if (currentLevel >= 1 && currentLevel < 4)
             {
                 PlayingBrush = CreateSolidBrush(RGB(181, 181, 255));
 
 				FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (currentLevel >= 5 && currentLevel < 9)
+            else if (currentLevel >= 4 && currentLevel < 7)
             {
                 PlayingBrush = CreateSolidBrush(RGB(214, 188, 249));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (currentLevel >= 9 && currentLevel <= 10)
+            else if (currentLevel >= 7 && currentLevel < 8)
             {
                 PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (currentLevel == 11)
+            else if (currentLevel == 8)
             {
                 /// 클리어 화면
             }
+
+            if (PlayingBrush) DeleteObject(PlayingBrush);
 
             DeathAndLevelFont(hdc, hWnd);
 
@@ -964,23 +1266,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TextOut(hdc, 10, 10, deathBuf, lstrlenW(deathBuf));
 
             WCHAR LevelBuf[64] = { 0, };
-			wsprintf(LevelBuf, L"LEVEL : %d / 10", currentLevel);
+			wsprintf(LevelBuf, L"LEVEL : %d / 7", currentLevel);
 			TextOut(hdc, 10, 40, LevelBuf, lstrlenW(LevelBuf));
 
-            if (currentLevel >= 1 && currentLevel < 5) {
+            if (currentLevel >= 1 && currentLevel < 4) {
                 DrawLevelMap(hdc);
                 drawPlayer(hdc);
                 drawEnemyBlue(hdc);
 			}
-            else if (currentLevel >= 5 && currentLevel < 9) {
+            else if (currentLevel >= 4 && currentLevel < 7) {
                 DrawLevelMap(hdc);
                 drawPlayer(hdc);
-                //drawEnemyPurple(hdc);
+                drawEnemyPurple(hdc);
             }
             else {
                 DrawLevelMap(hdc);
                 drawPlayer(hdc);
-                //drawEnemyRed(hdc);
+                drawEnemyRed(hdc);
             }
 
              
@@ -993,6 +1295,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             DrawBackGroundGradient(hdc, hWnd);
         }
+
+
+        SelectObject(hdcMem, hOldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(hdcMem);
+
         EndPaint(hWnd, &ps);
     }
     break;
