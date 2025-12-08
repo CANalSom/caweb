@@ -511,7 +511,7 @@ void DrawLevelMap(HDC hdc)
     }
 }
 
-
+/*
 void PlayerPosition()
 {
     int dx = 0;
@@ -546,7 +546,7 @@ void PlayerPosition()
     playerX += dx;
     playerY += dy;
 }
-
+*/
 
 void drawPlayer(HDC hdc)
 {
@@ -995,6 +995,193 @@ void CheckEnemyCollision() {
     }
 }
 
+
+
+const int PLAYER_SIZE = 35;
+const int PLAYER_HALF_SIZE = 17; 
+
+#define LEVEL1_WALL_COUNT 16 
+#define LEVEL2_WALL_COUNT 8
+#define LEVEL3_WALL_COUNT 12
+#define LEVEL4_WALL_COUNT 22
+#define LEVEL5_WALL_COUNT 10
+#define LEVEL6_WALL_COUNT 9
+
+RECT Level1Walls[LEVEL1_WALL_COUNT] = {
+    { 0, 0, 1000, 180 },       
+    { 0, 469, 1000, 600 },   
+    { 0, 180, 256, 469 },        
+    { 944, 180, 1000, 469 },      
+    { 256, 209, 452, 229 },   
+    { 432, 180, 452, 229 },      
+    { 452, 160, 747, 180 },   
+    { 747, 180, 767, 229 },       
+    { 747, 209, 944, 229 },     
+    { 944, 229, 964, 421 },     
+    { 747, 421, 944, 441 },     
+    { 747, 421, 767, 469 },     
+    { 452, 469, 747, 489 },      
+    { 432, 421, 452, 469 },      
+    { 256, 421, 452, 441 },        
+    { 236, 229, 256, 421 },         
+};
+
+RECT Level2Walls[LEVEL2_WALL_COUNT] = {
+        { 403, 157, 423, 252 },
+        { 403, 233, 943, 253 },
+        { 943, 253, 963, 493 },
+        { 797, 493, 943, 513 },
+        { 777, 397, 797, 493 },
+        { 255, 397, 797, 417 },
+        { 235, 156, 255, 397 },
+        { 255, 137, 403, 157 },
+};
+
+RECT Level3Walls[LEVEL3_WALL_COUNT] = {
+    { 156, 250, 304, 270 },
+    { 304, 161, 305, 270 },
+    { 304, 141, 895, 161 },
+    { 894, 161, 895, 270 },
+    { 895, 250, 1043, 270 },
+    { 1043, 270, 1063, 379 },
+    { 895, 379, 1043, 399 },
+    { 894, 379, 895, 488 },
+    { 304, 488, 895, 508 },
+    { 304, 379, 305, 488 }, 
+    { 156, 379, 304, 399 },
+    { 136, 270, 156, 379 },
+};
+
+RECT Level4Walls[LEVEL4_WALL_COUNT] = {
+    { 0, 0, 1000, 1 },             
+    { 0, 648, 1000, 800 },     
+    { 527, 21, 547, 121 },
+    { 388, 121, 547, 122 },
+    { 368, 121, 388, 274 },
+    { 336, 254, 388, 274 },
+    { 316, 274, 336, 374 },
+    { 337, 374, 389, 394 },
+    { 369, 374, 389, 527 },
+    { 389, 527, 547, 547 },
+    { 527, 527, 547, 628 },
+    { 547, 628, 652, 648 },
+    { 652, 527, 672, 628 },
+    { 652, 527, 810, 547 },
+    { 810, 374, 830, 527 },
+    { 810, 374, 863, 394 },
+    { 863, 274, 883, 374 },
+    { 810, 254, 863, 274 },
+    { 810, 121, 830, 274 },
+    { 652, 121, 810, 122 },
+    { 652, 21, 672, 121 },
+    { 547, 1, 652, 21 }
+};
+
+RECT Level5Walls[LEVEL5_WALL_COUNT] = {
+    { 0, 0, 1000, 75 },               
+    { 0, 575, 1000, 800 },   
+    { 130, 75, 975, 95 },            
+    { 975, 95, 995, 461 },        
+    { 975, 441, 1069, 461 },       
+    { 1069, 461, 1089, 555 },  
+    { 225, 555, 1069, 575 },    
+    { 205, 188, 225, 555 },
+    { 131, 188, 225, 208 },       
+    { 110, 95, 130, 188 },
+};
+
+RECT Level6Walls[LEVEL6_WALL_COUNT] = {
+    { 131, 470, 975, 490 },
+    { 975, 277, 995, 470 },
+    { 975, 277, 1068, 277 },
+    { 1068, 180, 1088, 277 },
+    { 244, 160, 1068, 180 },
+    { 225, 160, 244, 180 },
+    { 193, 180, 225, 372 },
+    { 131, 352, 223, 372 },
+    { 111, 372, 131, 470 }
+};
+
+bool CheckWallCollision(int nextX, int nextY) {
+    RECT* currentWalls = NULL;
+    int wallCount = 0;
+
+    if (currentLevel == 1) {
+        currentWalls = Level1Walls;
+        wallCount = LEVEL1_WALL_COUNT;
+    }
+    else if (currentLevel == 2) {
+        currentWalls = Level2Walls;
+        wallCount = LEVEL2_WALL_COUNT;
+    }
+    else if (currentLevel == 3) {
+        currentWalls = Level3Walls;
+        wallCount = LEVEL3_WALL_COUNT;
+	}
+    else if (currentLevel == 4) {
+        currentWalls = Level4Walls;
+        wallCount = LEVEL4_WALL_COUNT;
+    }
+    else if (currentLevel == 5) {
+        currentWalls = Level5Walls;
+        wallCount = LEVEL5_WALL_COUNT;
+    }
+    else if (currentLevel == 6) {
+        currentWalls = Level6Walls;
+        wallCount = LEVEL6_WALL_COUNT;
+    }
+
+    // 충돌 검사가 필요 없는 레벨(또는 정의되지 않은 레벨)
+    if (currentWalls == NULL) {
+        return false;
+    }
+
+    // 3. 플레이어의 다음 위치 사각형 (35x35) 정의
+    RECT nextPlayerRect = {
+        nextX - PLAYER_HALF_SIZE,
+        nextY - PLAYER_HALF_SIZE,
+        nextX + PLAYER_HALF_SIZE,
+        nextY + PLAYER_HALF_SIZE
+    };
+
+    RECT tempRect;
+
+    // 4. 현재 레벨의 벽 배열을 순회하며 충돌 검사
+    for (int i = 0; i < wallCount; i++) {
+        if (IntersectRect(&tempRect, &currentWalls[i], &nextPlayerRect)) {
+            return true; // 충돌 발생
+        }
+    }
+
+    return false;
+}
+
+void PlayerPosition() {
+    extern int playerX, playerY;
+    extern bool bKeyDown[];
+
+    int deltaX = 0;
+    int deltaY = 0;
+
+    if (bKeyDown[VK_LEFT]) deltaX -= playerSpeed;
+    if (bKeyDown[VK_RIGHT]) deltaX += playerSpeed;
+    if (bKeyDown[VK_UP]) deltaY -= playerSpeed;
+    if (bKeyDown[VK_DOWN]) deltaY += playerSpeed;
+
+    if (deltaX != 0) {
+        int nextX = playerX + deltaX;
+        if (!CheckWallCollision(nextX, playerY)) {
+            playerX = nextX;
+        }
+    }
+
+    if (deltaY != 0) {
+        int nextY = playerY + deltaY;
+        if (!CheckWallCollision(playerX, nextY)) {
+            playerY = nextY;
+        }
+    }
+}
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
