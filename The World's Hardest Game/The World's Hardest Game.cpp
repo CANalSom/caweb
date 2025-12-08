@@ -112,14 +112,13 @@ const struct { int w, h; } LevelSizes[] = {
     { 540, 620 },  // Level 4
     { 950, 470 },  // Level 5
     { 950, 300 },  // Level 6
-    { 950, 400 },  // Level 7
 };
 
 #define MAX_LEVELS 7
 HBITMAP mapBitmaps[MAX_LEVELS + 1] = { 0, };
 HDC memDCs[MAX_LEVELS + 1] = { 0, };
 
-int currentLevel = 7;
+int currentLevel = 1;
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -411,7 +410,7 @@ ButtonClick clickItem[] = {
 };
 
 ButtonClick clearedButton = {
-    L"END",
+    L"MENU",
 	ITEM_EXIT_TO_MENU,
     { 500, 400, 700, 500 }
 };
@@ -477,7 +476,7 @@ LevelGoal levelGoals[] = {
 	{ { 548, 529, 653, 628 } },     // Level 4
     { { 975, 462, 1069, 554 } },    // Level 5
     { { 975, 180, 1069, 277 } },    // Level 6
-    { { 130, 421, 224, 517 } },     // Level 7
+    { { 130, 420, 225, 515 } },     // Level 7
 };
 
 /// 플레이어
@@ -587,6 +586,8 @@ int currentEnemyCount = 0;
 #define MOVE_SQUARE 2
 
 void LoadLevelEnemies() {
+    currentEnemyCount = 0;
+
     if (currentLevel == 1) {
         double speed = 6.0;
         const int RANGE_START = 195;
@@ -682,7 +683,7 @@ void LoadLevelEnemies() {
         const int RANGE_STARTUD = 125;
         const int RANGE_ENDUD = 535;
 
-        currentEnemyCount = 20;
+        currentEnemyCount = 36;
 
         enemies[0] = { 247, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
         enemies[1] = { 342, 115, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
@@ -704,15 +705,31 @@ void LoadLevelEnemies() {
 
         speed = 9.0;
 
-        int RANGE_STARTLR = 435;
-        int RANGE_ENDLR = 715;
-        enemies[16] = { 435, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
-        enemies[17] = { 435, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        int RANGE_STARTLR = 245;
+        int RANGE_ENDLR = 905;
+        enemies[16] = { 245, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[17] = { 245, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[20] = { 905, 210, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[21] = { 905, 260, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[24] = { 245, 120, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[25] = { 245, 170, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[28] = { 905, 390, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[29] = { 905, 440, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[32] = { 245, 480, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[33] = { 245, 530, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
 
-        RANGE_STARTLR = 485;
-        RANGE_ENDLR = 765;
-        enemies[18] = { 485, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
-        enemies[19] = { 485, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        RANGE_STARTLR = 295;
+        RANGE_ENDLR = 955;
+        enemies[18] = { 295, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[19] = { 295, 350, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[22] = { 955, 210, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[23] = { 955, 260, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[26] = { 295, 120, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[27] = { 295, 170, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[30] = { 955, 390, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[31] = { 955, 440, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[34] = { 295, 480, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
+        enemies[35] = { 295, 530, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
     }
 
     else if (currentLevel == 6) {
@@ -779,75 +796,6 @@ void LoadLevelEnemies() {
         enemies[34] = { 795, 300, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
         enemies[35] = { 795, 205, 1, RANGE_STARTLR, RANGE_ENDLR, MOVE_LR, speed };
     }
-    else if (currentLevel == 7) {
-
-        double speed = 10;
-
-        const int RANGE_STARTUD = 145;
-        const int RANGE_ENDUD = 505;
-
-        currentEnemyCount = 51;
-
-        enemies[0] = { 250, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[1] = { 390, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[2] = { 530, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[3] = { 670, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[4] = { 810, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[5] = { 950, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-
-        speed = 6;
-
-        enemies[6] = { 295, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[7] = { 435, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[8] = { 575, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[9] = { 715, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[10] = { 860, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[11] = { 1000, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-
-        speed = 4;
-        enemies[12] = { 345, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[13] = { 485, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[14] = { 625, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[15] = { 765, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[16] = { 905, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[17] = { 1045, 130, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-
-        speed = 0;
-        enemies[19] = { 250, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[20] = { 295, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[21] = { 345, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[22] = { 390, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[23] = { 435, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[24] = { 485, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[25] = { 530, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[26] = { 575, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[27] = { 625, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-		enemies[28] = { 670, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[29] = { 715, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[30] = { 765, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[31] = { 810, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[32] = { 860, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[33] = { 905, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-        enemies[34] = { 950, 300, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-
-		enemies[35] = { 250, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[36] = { 295, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[37] = { 345, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[38] = { 390, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[39] = { 435, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[40] = { 485, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[41] = { 530, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[42] = { 575, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[43] = { 625, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[44] = { 670, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[45] = { 715, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[46] = { 765, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[47] = { 810, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[48] = { 860, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-        enemies[49] = { 905, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };  
-		enemies[50] = { 950, 350, 1, RANGE_STARTUD, RANGE_ENDUD, MOVE_UD, speed };
-
-    }
 }
 
 void ResetPlayerToStart() {
@@ -868,19 +816,24 @@ void CheckLevelCompletion(HWND hWnd)
             playerY + playerTotalSize / 2
     };
 
-    if (currentLevel >= 1 && currentLevel <= (sizeof(levelGoals) / sizeof(levelGoals[0])))
+    if (currentLevel >= 1 && currentLevel <= MAX_LEVELS)
     {
         RECT goalRect = levelGoals[currentLevel - 1].goalRect;
 
         RECT tempRect;
 
         if (IntersectRect(&tempRect, &playerRect, &goalRect)) {
-            if (currentLevel < MAX_LEVELS) {
+            if (currentLevel == MAX_LEVELS - 1) {
+                currentStage = CLEARED;
+                InvalidateRect(hWnd, NULL, TRUE);
+                return;
+            }
+            else {
                 currentLevel++;
                 ResetPlayerToStart();
-                LoadLevelEnemies();
-
+                LoadLevelEnemies();  
                 InvalidateRect(hWnd, NULL, TRUE);
+                return; 
             }
         }
     }
@@ -1034,6 +987,7 @@ void CheckEnemyCollision() {
     }
 }
 
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -1083,7 +1037,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (currentStage == MENU)
         {
-            for (int i = 0; i <= menuItem_count; i++)
+            for (int i = 0; i < menuItem_count; i++)
             {
                 // PtInRect 함수 : 특정 좌표가 사각형 영역 내에 있는지 확인
                 // 사각형 영역 : menuList[i].rect
@@ -1118,7 +1072,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else if (currentStage == TUTORIAL_INTRO)
         {
-            for (int i = 0; i <= clickItem_count; i++)
+            for (int i = 0; i < clickItem_count; i++)
             {
                 if (PtInRect(&clickItem[i].rect, { mouseX, mouseY }))
                 {
@@ -1137,7 +1091,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
             ReleaseDC(hWnd, hdc);
-        };
+        }
+        else if (currentStage == CLEARED) {
+            if (PtInRect(&clearedButton.rect, { mouseX, mouseY })) {
+                if (clearedButton.id == ITEM_EXIT_TO_MENU) {
+                    currentStage = MENU;
+                    currentLevel = 1;
+                    deaths = 0;
+
+                    ResetPlayerToStart();
+                    LoadLevelEnemies();
+
+                    InvalidateRect(hWnd, NULL, TRUE);
+                }
+            }
+            ReleaseDC(hWnd, hdc);
+        }
     }
     break;
     case WM_CREATE:
@@ -1164,10 +1133,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (currentLevel == 6) {
             }
-            else if (currentLevel == 7) {
-            }
 
-            if (currentLevel >= 1 && currentLevel <= 7) {
+            if (currentLevel >= 1 && currentLevel <= 6) {
                 UpdateEnemiesMovement();
                 CheckEnemyCollision();
                 CheckLevelCompletion(hWnd);
@@ -1225,10 +1192,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             TextOut(hdc, 220, 200, tutorialIntroText, lstrlenW(tutorialIntroText));
             MenuFont(hdc, hWnd);
 
-            for (int i = 0; i <= clickItem_count; i++)
+            for (int i = 0; i < clickItem_count; i++)
             {
                 TextOut(hdc, clickItem[i].rect.left, clickItem[i].rect.top, clickItem[i].text, lstrlenW(clickItem[i].text));
 			}
+        }
+        else if (currentStage == CLEARED)
+        {
+            DrawBackGroundGradient(hdc, hWnd);
+
+            ScreenFont(hdc, hWnd);
+            SetTextColor(hdc, RGB(0, 0, 0));
+
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            int clientWidth = clientRect.right;
+
+            WCHAR clearedText[] = { L"Congratulations! Thanks for playing!" };
+            TextOut(hdc, 220, 200, clearedText, lstrlenW(clearedText));
+
+            MenuFont(hdc, hWnd);
+			TextOut(hdc, clearedButton.rect.left, clearedButton.rect.top, clearedButton.text, lstrlenW(clearedButton.text));
         }
         else if (currentStage == PLAYING)
         {
@@ -1246,16 +1230,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 FillRect(hdc, &ps.rcPaint, PlayingBrush);
             }
-            else if (currentLevel >= 7 && currentLevel < 8)
-            {
-                PlayingBrush = CreateSolidBrush(RGB(247, 171, 171));
-
-                FillRect(hdc, &ps.rcPaint, PlayingBrush);
-            }
-            else if (currentLevel == 8)
-            {
-                /// 클리어 화면
-            }
 
             if (PlayingBrush) DeleteObject(PlayingBrush);
 
@@ -1266,7 +1240,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TextOut(hdc, 10, 10, deathBuf, lstrlenW(deathBuf));
 
             WCHAR LevelBuf[64] = { 0, };
-			wsprintf(LevelBuf, L"LEVEL : %d / 7", currentLevel);
+			wsprintf(LevelBuf, L"LEVEL : %d / 6", currentLevel);
 			TextOut(hdc, 10, 40, LevelBuf, lstrlenW(LevelBuf));
 
             if (currentLevel >= 1 && currentLevel < 4) {
@@ -1279,13 +1253,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 drawPlayer(hdc);
                 drawEnemyPurple(hdc);
             }
-            else {
-                DrawLevelMap(hdc);
-                drawPlayer(hdc);
-                drawEnemyRed(hdc);
-            }
-
-             
         }
         else if (currentStage == LOADING)
         {
