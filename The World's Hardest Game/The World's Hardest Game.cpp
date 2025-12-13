@@ -303,7 +303,6 @@ PlayerStartPoint startPoints[] = {
     { 600,  67 },     // Level 4
     { 176, 142 },    // Level 5
     { 178, 419 },    // Level 6
-    { 177, 180 },    // Level 7
 };
 
 LevelGoal levelGoals[] = {
@@ -329,7 +328,7 @@ const int playerInnerSize = playerTotalSize - (playerBorderThickness * 2);
 
 int deaths = 0;
 
-
+bool isDebugMode = false;
 
 
 void DrawBackGroundGradient(HDC hdc, HWND hWnd)
@@ -966,6 +965,10 @@ void drawEnemyRed(HDC hdc) {
 
 
 void CheckEnemyCollision() {
+    if (isDebugMode) {
+        return;
+    }
+
     extern const int playerTotalSize;
     extern const int enemySize;
 
@@ -1103,6 +1106,10 @@ RECT Level6Walls[LEVEL6_WALL_COUNT] = {
 };
 
 bool CheckWallCollision(int nextX, int nextY) {
+    if (isDebugMode) {
+        return false;
+    }
+
     RECT* currentWalls = NULL;
     int wallCount = 0;
 
@@ -1190,6 +1197,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_KEYDOWN:
     {
+        switch (wParam) {
+            case VK_F1:
+            case VK_F2:
+            case VK_F3:
+            case VK_F4:
+            case VK_F5:
+            case VK_F6:
+            {
+                currentLevel = (int)wParam - 111;
+            
+			    int currentLevelIndex = currentLevel - 1;
+
+                if (currentLevelIndex >= 0 && currentLevelIndex < (sizeof(startPoints) / sizeof(startPoints[0]))) {
+                    playerX = startPoints[currentLevelIndex].startX;
+                    playerY = startPoints[currentLevelIndex].startY;
+
+                    LoadLevelEnemies();
+                }
+
+                InvalidateRect(hWnd, NULL, FALSE);
+            }
+            break;
+            case VK_F7:
+            {
+                isDebugMode = true;
+            }
+            break;
+            case VK_F8:
+            {
+                isDebugMode = false;
+                ResetPlayerToStart();
+            }
+            break;
+            }
         bKeyDown[wParam] = true;
     }
     break;
