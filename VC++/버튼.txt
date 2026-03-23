@@ -1,0 +1,33 @@
+WM_CREATE 버튼 생성
+- 클래스의 생성자와 동일한 역할 담당
+- 시작과 동시에 화면에 버튼 윈도우를 생성하도록 구성
+
+WM_DESTROY 버튼 해제
+
+CreateWindow( ) API
+- 윈도우를 생성하는 API
+- 버튼도 윈도우이므로 CreateWindow( )로 생성
+
+버튼 클릭 이벤트
+- 버튼이 클릭되면 구분자(ID) 값이 WM_COMMAND로 전달
+- CreateWindow에 설정한 구분자(ID) 값을 확인하여 필요한 작업 수행
+- 정확한 확인을 위해 구분자(ID) 값을 선언하여 사용
+
+- 실습에서는 메시지 박스를 출력하여 이벤트 받았음을 표시
+
+버튼 윈도우 핸들은 전역 변수로 선언
+- CALLBACK 함수의 함정의 함정을 회피하기 위함
+
+WM_DESTROY에서 윈도우 핸들을 제거
+- 버튼 역시 윈도우의 자원이므로, 프로그램 종료 시 해제해야 함
+
+===========
+HWND g_button;
+==========
+#define IDM_BTN_CLICK 999
+=============
+case IDM_BTN_CLICK:
+MessageBox(hWnd, L"NFIASFNV", L"casijcisa", MB_OK
+============
+case WM_CREATE:
+g_button = CreateWindow(L"button", L"클릭", WS_CHILD | WS_VISIBLE, x, y, 가로, 세로, hWnd, (HMENU)IDB_BTM_CLICK, hInst, NULL);
