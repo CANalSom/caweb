@@ -1,0 +1,57 @@
+
+hInst : 인스턴스
+HDC : 어떤 객체의 메모리를 접근하고 사용할 수 있는 포인터
+
+MyRegisterClass( ) : 창의 클래스를 등록함수
+RegisterClassExW( ) : 실제로 윈도우를 OS에 등록하는 함수를 호출
+InitInstance( ) : 인스턴스 핸들을 저장하고 주 창을 만든다
+콜백함수 : OS가 호출할 수 있는 일반적인 함수
+WndProc( ) : 사용자가 입력한 정보 처리
+HWND : 사용자가 입력한 윈도우 자체
+UINT : 사용자가 취한 액션
+WPARAM : 키보드 관련 정보 전달
+LPARAM : 마우스 관련 정보 전달
+HPEN : 펜 도구
+HBRUSH : 브레시 도구
+Create_____( ) : 객체 선택
+SelectObject( ) : HDC 객체 선택
+DeleteObject( ) : 객체 제거
+GetDC(hWnd); : 이 윈도우(hWnd)의 HDC를 요청
+ReleaseDC( ) : 이 윈도우에서 사용한 HDC 더 이상 사용하지 않음
+WM_ : Window Message
+BeginPaint( ) : 화면에 그리기를 시작하겠다는 OS에게 알리는 API
+	- WM_PAINT에서만 정상적으로 동작하는 API
+EndPaint( ) : 화면 그리기를 종료하겠다는 OS에게 알리는 API
+	- WM_PAINT 영역 이외의 코드 영역에서는 정상적으로 동작하지 않음
+DefWindowProc(DefeaultWindowProc) : 받았던 정보를 그대로 다시 OS에게 되돌리는 함수
+CreateWindow( ) : 윈도우 생성
+Rectangle( ) : 사각형
+Ellipse( ) : 타원형
+MoveToEx( ) : 시작점을 설정하기 위한 API
+LineTo( ) : 끝점을 설정하기 위한 API 
+RECT : 정보를 담는 구조체
+IntersectRect( ) : OS에게 겹침 발생 여부를 확인하는 API
+SetTImer( ) : 알람 설정
+KillTimer( ) : 알람 해제
+wsprintf( ) : 선언된 문자열 변수에 지정 형식으로 내용을 채우는 함수
+TextOut ( ) : 화면에 지정된 문자열을 출력하는 API
+lstrlenW ( ) : 유니코드 문자열의 정확한 길이를 알려주는 함수
+
+------------------------
+WM_PAINT : 화면을 다시 그리도록 요청
+	- 프로그램이 실행 될 때 OS가 자동으로 호출
+	- 창의 크기, 창의 최대화, 창의 최소화 등 호출 되는 경우
+WM_DESTORY : 프로그램 종료를 요청
+WM_COMMAND - 메뉴를 클릭했을 때 발생하는 메시지
+WM_KEYDOWN : 사용자가 키보드의 키를 누르자마자 발생하는 메시지
+WM_LBUTTONDOWN : 마우스의 왼쪽 버튼을 누른 순간 발생하는 메시지
+WM_MOUSEMOVE : 마우스가 이동할 때마다 발생하는 메시지
+WM_CREATE : 생성자와 동일한 역할을 수행하는 윈도우 메시지
+WM_DESTROY : 반면, 소멸자와 동일한 역할을 수행하는 윈도우 메시지
+WM_TIMER : 주기적으로 반복하는 메시지
+------------------------
+윈도우에 변경사항이 있다면 즉시 적용하기
+UpdateWindow( )
+InvalidateRect( ) : 사각형 무효화
+ShowWindow( )
+
